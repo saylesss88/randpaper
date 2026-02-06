@@ -26,11 +26,10 @@
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
           nativeBuildInputs = [ pkgs.pkg-config ];
-          buildInputs = [ pkgs.ncurses ];
           meta = with pkgs.lib; {
             description = manifest.description;
             homepage = manifest.repository;
-            license = licenses.gpl3Plus;
+            license = licenses.asl20;
             mainProgram = "randpaper";
           };
         };
