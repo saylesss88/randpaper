@@ -1,0 +1,22 @@
+[package]
+name = "randpaper"
+version = "0.1.0"
+edition = "2024"
+description = "Sets a different random wallpaper per monitor every N minutes"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/saylesss88/randpaper"
+homepage = "https://github.com/saylesss88/randpaper"
+keywords = ["rust", "wallpaper"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+anyhow = "1.0.101"
+clap = {version = "4.5.57", features = ["derive"]}
+hyprland = "0.3.13"
+parse_duration = "2.1.1"
+rand = "0.9.2"
+swayipc-async = "3.0.0"
+swayipc-types = "2.0.1"
+tokio = {version = "1.49.0", features = ["full"]}
+walkdir = "2.5.0"
