@@ -1,4 +1,3 @@
-// use clap::Parser;
 use std::path::PathBuf;
 
 /// Time backend enum.

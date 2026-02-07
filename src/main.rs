@@ -1,12 +1,8 @@
 #![allow(clippy::multiple_crate_versions)]
-mod cli;
-mod core;
-mod hyprland;
-mod sway;
+use randpaper::cli::{Backend, Cli};
+use randpaper::{hyprland, sway};
 
 use clap::Parser;
-
-use crate::cli::{Backend, Cli};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
