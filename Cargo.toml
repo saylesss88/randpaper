@@ -9,6 +9,15 @@ repository = "https://github.com/saylesss88/randpaper"
 homepage = "https://github.com/saylesss88/randpaper"
 keywords = ["rust", "wallpaper"]
 categories = ["command-line-utilities"]
+exclude = [
+	".github",
+	".gitignore",
+	"flake",
+	"flake.lock",
+	"flake.nix",
+	"result",
+	"rustfmt.toml",
+]
 
 [dependencies]
 anyhow = "1.0.101"
