@@ -1,5 +1,5 @@
-use rand::prelude::IndexedRandom;
-use std::path::Path;
+use rand::prelude::*;
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 /// Picks a random wallpaper file from `dir`.
@@ -8,32 +8,29 @@ use walkdir::WalkDir;
 ///
 /// Returns an error if:
 /// - the directory cannot be read, or
-/// - no supported images are found in `dir`.
-pub fn pick_random_wallpaper(dir: &Path) -> anyhow::Result<std::path::PathBuf> {
-    let mut imgs = Vec::new();
+/// - no supported images (jpg, jpeg, png, bmp) are found in `dir`.
+pub fn pick_random_wallpaper<P: AsRef<Path>>(dir: P) -> anyhow::Result<PathBuf> {
+    let mut images = Vec::new();
+    for entry in WalkDir::new(dir.as_ref()) {
+        let entry = entry?;
+        if entry.file_type().is_file() {
+            let ext = entry
+                .path()
+                .extension()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_lowercase(); // Convert to lowercase first
 
-    for ent in WalkDir::new(dir).follow_links(true) {
-        let Ok(ent) = ent else { continue };
-
-        let p = ent.path();
-
-        if !p.is_file() {
-            continue;
+            if ["jpg", "jpeg", "png", "bmp"].contains(&ext.as_str()) {
+                images.push(entry.path().to_path_buf());
+            }
         }
-
-        let ext = p
-            .extension()
-            .and_then(|s| s.to_str())
-            .unwrap_or("")
-            .to_ascii_lowercase();
-
-        if matches!(ext.as_str(), "png" | "jpg" | "jpeg" | "webp") {
-            imgs.push(p.to_path_buf());
-        }
+    }
+    if images.is_empty() {
+        anyhow::bail!("no images found in {:?}", dir.as_ref().display());
     }
 
     let mut rng = rand::rng();
-    imgs.choose(&mut rng)
-        .cloned()
-        .ok_or_else(|| anyhow::anyhow!("no images found in {}", dir.display()))
+    let i = rng.random_range(0..images.len());
+    Ok(images[i].clone())
 }
