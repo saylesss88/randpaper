@@ -8,7 +8,7 @@ license = "Apache-2.0"
 repository = "https://github.com/saylesss88/randpaper"
 homepage = "https://github.com/saylesss88/randpaper"
 keywords = ["rust", "wallpaper"]
-categories = ["command-line-utilities", "sway", "hyprland", "multimedia"]
+categories = ["command-line-utilities", "multimedia"]
 exclude = [
 	".github",
 	".gitignore",
