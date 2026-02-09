@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 description = "Sets a different random wallpaper per monitor every N minutes"
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/saylesss88/randpaper"
 homepage = "https://github.com/saylesss88/randpaper"
 keywords = ["rust", "wallpaper"]
-categories = ["command-line-utilities"]
+categories = ["command-line-utilities", "sway", "hyprland", "multimedia"]
 exclude = [
 	".github",
 	".gitignore",

@@ -4,6 +4,7 @@ use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
 use std::time::Duration;
 use tokio::process::{Child, Command};
+use tokio::signal::unix::{SignalKind, signal};
 use tokio::time::sleep;
 
 async fn detect_swww_binary() -> String {
@@ -49,6 +50,8 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
 
         sleep(Duration::from_millis(500)).await;
     }
+
+    let mut sig_usr1 = signal(SignalKind::user_defined1())?;
 
     loop {
         // A. Get Monitors
@@ -134,6 +137,17 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
                 }
             }
         }
-        sleep(period).await;
+        // sleep(period).await;
+        log::info!("Sleeping for {period:?}");
+
+        tokio::select! {
+            () = sleep(period) => {
+                // Timer finished naturally, loop continues to change wallpaper
+            }
+            _ = sig_usr1.recv() => {
+                log::info!("Received skip signal (SIGUSR1). Cycling wallpaper immediately.");
+                // Loop continues immediately, effectively skipping the sleep
+            }
+        }
     }
 }

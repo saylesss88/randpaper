@@ -1,3 +1,7 @@
+[![Nix Flake](https://img.shields.io/badge/Nix_Flake-Geared-dddd00?logo=nixos&logoColor=white)](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake.html)
+
+[![Nix](https://img.shields.io/badge/Nix-5277C3?style=flat&logo=nixos&logoColor=white)](https://nixos.org)
+
 # randpaper - lightweight wallpaper & theme utility
 
 A minimalist, high-performance wallpaper daemon for Wayland. `randpaper` keeps
@@ -7,18 +11,19 @@ match the image pallete.
 
 ## 🚀 Features
 
-- ⚡ Performance: Written in Rust using tokio. Scans your image directory once
+- ⚡ Performance: Written in Rust using `tokio`. Scans your image directory once
   into memory (caching paths) to prevent disk I/O spikes, even with massive
   wallpaper collections.
 
 - 🎨 Dynamic Theming: Automatically extracts dominant colors from the current
-  wallpaper and generates config files for Ghostty, Kitty, and Foot, keeping
-  your terminal in sync with your desktop.
+  wallpaper and generates config files for **Ghostty**, **Kitty**, and **Foot**,
+  keeping your terminal in sync with your desktop.
 
 - 🖥️ Multi-Monitor: Assigns a unique random image to every active output
   simultaneously.
 
-- 🛠️ Modular Backends: Works seamlessly with swaybg
+- 🛠️ Modular Backends: Works seamlessly with **Sway** and **Hyprland** (via
+  `hyprctl` or Sway IPC) and supports both `swaybg` and `swww` renderers.
 
 ---
 
@@ -26,7 +31,7 @@ match the image pallete.
 
 **Prerequisits**
 
-You need `swaybg` installed as the backend.
+You need `swaybg` or (`swww` / `awww`) installed as the renderer.
 
 ```bash
 # From source
@@ -55,50 +60,57 @@ environment.systemPackages = {
 
 And add an `exec` for either hyprland or sway:
 
-Hyprland UWSM:
+Hyprland Example:
 
 ```nix
 wayland.windowManager.hyprland = {
   settings = {
     exec-once = [
-  "uwsm app -- randpaper --time=15m /home/your-user/Pictures/wallpapers --backend hyprland"
+  # Standard Usage
+  "randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland --renderer swww"
+  # UWSM Usage
+  "uwsm app -- randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland"
     ];
   };
 }
 ```
-
-- It's not required to also ad an exec for `swaybg`.
 
 Sway Example:
 
 ```nix
 wayland.windowManager.sway = {
   extraConfig = ''
-    exec randpaper --time 15m /home/your-user/wallpapers
-    # Or use the defaults of `--backend sway` and `--time 30m`
-    # exec randpaper /home/your-user/wallpapers
+    # Default backend is Sway, default time is 30m
+     exec randpaper /home/your-user/wallpapers
   '';
 };
 ```
+
+> Note: `randpaper` manages the renderer process for you. You do not need a
+> separate `exec-once = swaybg ...` line in your config.
 
 ---
 
 ## 🧾 Usage
 
 ```bash
-# Defaults to changing every 30m
+# Defaults to changing every 30m using swaybg
 randpaper ~/Pictures/wallpapers
-# Custom: change every 5 minutes using Hyprland backend
-randpaper --time 5m --backend hyprland ~/Pictures/wallpapers
+# Custom: change every 5 minutes using Hyprland detection + SWWW transitions
+randpaper --time 5m --backend hyprland --renderer swww ~/Pictures/wallpapers
 ```
+
+- [Sample wallpaper repo](https://github.com/saylesss88/wallpapers2)
 
 **Advanced Options**
 
-| Flag            | Description                               | Default       |
-| :-------------- | :---------------------------------------- | :------------ |
-| `-t, --time`    | Time between changes(e.g., 15m, 1h)       | `30m`         |
-| `-b, --backend` | Choose backend: `sway` or `hyprland`      | `sway`        |
-| `-o, --outputs` | Specific outputs to target (e.g., `DP-1`) | Auto-discover |
+| Flag             | Description                             | Default       |
+| :--------------- | :-------------------------------------- | :------------ |
+| `[DIR]`          | Directory containing images             | `.`           |
+| `-t, --time`     | Time between changes(e.g., 15m, 1h)     | `30m`         |
+| `-b, --backend`  | Detection backend: `sway` or `hyprland` | `sway`        |
+| `-o, --outputs`  | Specific outputs to target (Sway only)  | Auto-discover |
+| `-r, --renderer` | Renderer tool: `swaybg` or `swww`       | `swaybg`      |
 
 ---
 
@@ -139,6 +151,31 @@ include ~/.config/randpaper/themes/kitty.conf
 
 ---
 
+## ⏭️ Cycling Wallpapers
+
+You can force `randpaper` to cycle to the next image immediately by sending it
+the `SIGUSR1` signal.
+
+**Hyprland Config**:
+
+```text
+bind = $mainMod, N, exec, pkill -USR1 randpaper
+```
+
+**Sway Config**:
+
+```text
+bindsym $mod+n exec pkill -USR1 randpaper
+```
+
+**Shell**:
+
+```bash
+pkill -USR1 randpaper
+```
+
+---
+
 ## ⚙️ How it Works
 
 1. **Startup**: Caches all valid image paths (`jpg`, `png`, `bmp`, `webp`) from
@@ -152,6 +189,13 @@ include ~/.config/randpaper/themes/kitty.conf
 
 - Generates theme files and triggers terminal reloads.
 
-- Spawns a non-blocking background process (`swaybg`) to render the wallpapers.
+- Spawns a non-blocking background process (`swaybg` daemon or `swww` client) to
+  update the display.
 
 - Sleeps efficiently until the next cycle.
+
+---
+
+## License
+
+- [Apache License 2.0](https://github.com/saylesss88/randpaper/blob/main/LICENSE)
