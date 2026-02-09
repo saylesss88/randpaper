@@ -28,7 +28,6 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
 
     let mut current_swaybg: Option<Child> = None;
 
-    // DETECT BINARY NAME ONCE
     let swww_bin = if cli.renderer == RendererType::Swww {
         detect_swww_binary().await
     } else {
@@ -54,7 +53,6 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
     let mut sig_usr1 = signal(SignalKind::user_defined1())?;
 
     loop {
-        // A. Get Monitors
         let monitors = match backend.get_active_monitors().await {
             Ok(m) => m,
             Err(e) => {
