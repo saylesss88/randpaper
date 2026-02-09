@@ -4,7 +4,7 @@ use std::path::PathBuf;
 #[derive(Clone, Debug, clap::ValueEnum)]
 pub enum Backend {
     Sway,
-    Swww,
+    Hyprland,
 }
 
 /// A lightweight Wayland wallpaper daemon that randomizes backgrounds per‑screen.
@@ -22,7 +22,7 @@ pub struct Cli {
     #[arg(short, long)]
     pub outputs: Vec<String>,
 
-    /// Backend to use (Sway or Swww).
+    /// Backend to use (Sway or Hyprland).
     #[arg(short, long, value_enum, default_value = "sway")]
     pub backend: Backend,
 }
