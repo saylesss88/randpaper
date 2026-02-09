@@ -2,6 +2,7 @@ use crate::cli::{Cli, RendererType};
 use crate::theme::update_theme_file;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
+use std::path::PathBuf;
 use std::time::Duration;
 use tokio::process::{Child, Command};
 use tokio::signal::unix::{SignalKind, signal};
@@ -21,6 +22,27 @@ async fn detect_swww_binary() -> String {
     "swww".to_string()
 }
 
+fn build_swaybg_args<F, M>(monitors: &[String], pick_random: F, mode: M) -> Vec<String>
+where
+    F: Fn() -> PathBuf,
+    M: Fn() -> String,
+{
+    let mut args = Vec::new();
+    for monitor in monitors {
+        let img = pick_random();
+        let Ok(abs_path) = img.canonicalize() else {
+            continue;
+        };
+        args.push("-o".to_string());
+        args.push(monitor.clone());
+        args.push("-m".to_string());
+        args.push(mode());
+        args.push("-i".to_string());
+        args.push(abs_path.to_string_lossy().to_string());
+    }
+    args
+}
+
 pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
     let cache = WallpaperCache::new(&cli.wallpaper_dir)?;
     let period: Duration =
@@ -31,7 +53,7 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
     let swww_bin = if cli.renderer == RendererType::Swww {
         detect_swww_binary().await
     } else {
-        String::new() // Not needed for swaybg
+        String::new()
     };
 
     log::info!(
@@ -40,13 +62,9 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
         cli.renderer
     );
 
-    // If using SWWW, we should ensure the daemon is initialized once
     if cli.renderer == RendererType::Swww {
-        let daemon_cmd = format!("{swww_bin}-daemon"); // e.g., "swww-daemon" or "awww-daemon"
-        // Try to start the daemon. Use spawn so it runs in background.
-        // We ignore the result because it might already be running.
+        let daemon_cmd = format!("{swww_bin}-daemon");
         let _ = Command::new(&daemon_cmd).spawn();
-
         sleep(Duration::from_millis(500)).await;
     }
 
@@ -62,59 +80,35 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
             }
         };
 
+        let img = cache.pick_random();
+        let _ = update_theme_file(img);
+
         match cli.renderer {
-            // ==========================================
-            // LOGIC FOR SWAYBG (The Daemon Approach)
-            // ==========================================
             RendererType::Swaybg => {
-                let mut args = Vec::new();
-                for (i, monitor) in monitors.iter().enumerate() {
-                    let img = cache.pick_random();
-                    if i == 0
-                        && let Err(e) = update_theme_file(img)
-                    {
-                        log::warn!("{e}");
-                    }
-
-                    if let Ok(abs_path) = img.canonicalize() {
-                        args.push("-o".to_string());
-                        args.push(monitor.clone());
-                        args.push("-m".to_string());
-                        args.push("fill".to_string());
-                        args.push("-i".to_string());
-                        args.push(abs_path.to_string_lossy().to_string());
-                    }
-                }
-
+                // Use a closure that captures the cache
+                let pick_random = || cache.pick_random().clone();
+                let args = build_swaybg_args(&monitors, pick_random, || "fill".to_string());
                 if !args.is_empty() {
                     if let Some(mut child) = current_swaybg.take() {
                         let _ = child.kill().await;
                         let _ = child.wait().await;
                     }
-                    let child = Command::new("swaybg")
+                    if let Ok(child) = Command::new("swaybg")
                         .args(&args)
                         .kill_on_drop(true)
-                        .spawn();
-                    if let Ok(c) = child {
-                        current_swaybg = Some(c);
+                        .spawn()
+                    {
+                        current_swaybg = Some(child);
                     }
                 }
             }
 
-            // ==========================================
-            // LOGIC FOR SWWW (The Client Approach)
-            // ==========================================
             RendererType::Swww => {
-                for (i, monitor) in monitors.iter().enumerate() {
+                for monitor in &monitors {
                     let img = cache.pick_random();
-                    if i == 0
-                        && let Err(e) = update_theme_file(img)
-                    {
-                        log::warn!("{e}");
-                    }
+                    let _ = update_theme_file(img);
 
                     if let Ok(abs_path) = img.canonicalize() {
-                        // Use the DETECTED binary name here
                         let _ = Command::new(&swww_bin)
                             .args([
                                 "img",
@@ -122,11 +116,11 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
                                 "-o",
                                 monitor,
                                 "--transition-type",
-                                "fade",
+                                &cli.transition_type,
                                 "--transition-step",
-                                "90",
+                                &cli.transition_step.to_string(),
                                 "--transition-fps",
-                                "60",
+                                &cli.transition_fps.to_string(),
                             ])
                             .status()
                             .await;
@@ -134,16 +128,12 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
                 }
             }
         }
-        // sleep(period).await;
-        log::info!("Sleeping for {period:?}");
 
+        log::info!("Sleeping for {period:?}");
         tokio::select! {
-            () = sleep(period) => {
-                // Timer finished naturally, loop continues to change wallpaper
-            }
+            () = sleep(period) => {}
             _ = sig_usr1.recv() => {
                 log::info!("Received skip signal (SIGUSR1). Cycling wallpaper immediately.");
-                // Loop continues immediately, effectively skipping the sleep
             }
         }
     }
