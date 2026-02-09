@@ -126,6 +126,7 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
                                 "90",
                                 "--transition-fps",
                                 "60",
+                                "--quiet",
                             ])
                             .status()
                             .await;
