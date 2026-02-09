@@ -1,4 +1,4 @@
-use crate::cli::Cli;
+use crate::cli::{Cli, RendererType};
 use crate::theme::update_theme_file;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
@@ -6,22 +6,52 @@ use std::time::Duration;
 use tokio::process::{Child, Command};
 use tokio::time::sleep;
 
-pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
-    // 1. Initialize Cache (Scan disk once)
-    let cache = WallpaperCache::new(&cli.wallpaper_dir)?;
+async fn detect_swww_binary() -> String {
+    // Try 'swww' first
+    if Command::new("swww").arg("--help").output().await.is_ok() {
+        return "swww".to_string();
+    }
+    // Try 'awww' second
+    if Command::new("awww").arg("--help").output().await.is_ok() {
+        return "awww".to_string();
+    }
+    // Default fallback (log a warning if neither found, but return swww)
+    log::warn!("Neither 'swww' nor 'awww' found. Defaulting to 'swww'.");
+    "swww".to_string()
+}
 
-    // 2. Parse time
+pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
+    let cache = WallpaperCache::new(&cli.wallpaper_dir)?;
     let period: Duration =
         parse_duration::parse(&cli.time).map_err(|e| anyhow::anyhow!("invalid duration: {e}"))?;
 
-    // 3. Keep track of the running background process
     let mut current_swaybg: Option<Child> = None;
 
-    log::info!("Starting wallpaper daemon. Interval: {period:?}");
+    // DETECT BINARY NAME ONCE
+    let swww_bin = if cli.renderer == RendererType::Swww {
+        detect_swww_binary().await
+    } else {
+        String::new() // Not needed for swaybg
+    };
+
+    log::info!(
+        "Starting daemon. Interval: {:?}, Renderer: {:?}",
+        period,
+        cli.renderer
+    );
+
+    // If using SWWW, we should ensure the daemon is initialized once
+    if cli.renderer == RendererType::Swww {
+        let daemon_cmd = format!("{swww_bin}-daemon"); // e.g., "swww-daemon" or "awww-daemon"
+        // Try to start the daemon. Use spawn so it runs in background.
+        // We ignore the result because it might already be running.
+        let _ = Command::new(&daemon_cmd).spawn();
+
+        sleep(Duration::from_millis(500)).await;
+    }
 
     loop {
-        // A. Get monitors
-        // Handle error gracefully so the daemon doesn't crash on a temporary IPC glitch
+        // A. Get Monitors
         let monitors = match backend.get_active_monitors().await {
             Ok(m) => m,
             Err(e) => {
@@ -31,50 +61,78 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
             }
         };
 
-        let mut args = Vec::new();
+        match cli.renderer {
+            // ==========================================
+            // LOGIC FOR SWAYBG (The Daemon Approach)
+            // ==========================================
+            RendererType::Swaybg => {
+                let mut args = Vec::new();
+                for (i, monitor) in monitors.iter().enumerate() {
+                    let img = cache.pick_random();
+                    if i == 0
+                        && let Err(e) = update_theme_file(img)
+                    {
+                        log::warn!("{e}");
+                    }
 
-        // B. Build arguments AND extract theme
-        for (i, monitor) in monitors.iter().enumerate() {
-            let img = cache.pick_random();
+                    if let Ok(abs_path) = img.canonicalize() {
+                        args.push("-o".to_string());
+                        args.push(monitor.clone());
+                        args.push("-m".to_string());
+                        args.push("fill".to_string());
+                        args.push("-i".to_string());
+                        args.push(abs_path.to_string_lossy().to_string());
+                    }
+                }
 
-            // LOGIC: If this is the first monitor (index 0), use it for the theme color
-            if i == 0
-                && let Err(e) = update_theme_file(img)
-            {
-                log::warn!("Theme update failed: {e}");
+                if !args.is_empty() {
+                    if let Some(mut child) = current_swaybg.take() {
+                        let _ = child.kill().await;
+                        let _ = child.wait().await;
+                    }
+                    let child = Command::new("swaybg")
+                        .args(&args)
+                        .kill_on_drop(true)
+                        .spawn();
+                    if let Ok(c) = child {
+                        current_swaybg = Some(c);
+                    }
+                }
             }
 
-            if let Ok(abs_path) = img.canonicalize() {
-                args.push("-o".to_string());
-                args.push(monitor.clone());
-                args.push("-m".to_string());
-                args.push("fill".to_string());
-                args.push("-i".to_string());
-                args.push(abs_path.to_string_lossy().to_string());
+            // ==========================================
+            // LOGIC FOR SWWW (The Client Approach)
+            // ==========================================
+            RendererType::Swww => {
+                for (i, monitor) in monitors.iter().enumerate() {
+                    let img = cache.pick_random();
+                    if i == 0
+                        && let Err(e) = update_theme_file(img)
+                    {
+                        log::warn!("{e}");
+                    }
+
+                    if let Ok(abs_path) = img.canonicalize() {
+                        // Use the DETECTED binary name here
+                        let _ = Command::new(&swww_bin)
+                            .args([
+                                "img",
+                                &abs_path.to_string_lossy(),
+                                "-o",
+                                monitor,
+                                "--transition-type",
+                                "fade",
+                                "--transition-step",
+                                "90",
+                                "--transition-fps",
+                                "60",
+                            ])
+                            .status()
+                            .await;
+                    }
+                }
             }
         }
-
-        // C. Manage the process
-        if !args.is_empty() {
-            // Kill previous instance
-            if let Some(mut child) = current_swaybg.take() {
-                let _ = child.kill().await;
-                let _ = child.wait().await; // Reap zombie process
-            }
-
-            // Spawn new instance
-            let child_result = Command::new("swaybg")
-                .args(&args)
-                .kill_on_drop(true)
-                .spawn();
-
-            match child_result {
-                Ok(child) => current_swaybg = Some(child),
-                Err(e) => log::error!("Failed to spawn swaybg: {e}"),
-            }
-        }
-
-        // D. Sleep
         sleep(period).await;
     }
 }
