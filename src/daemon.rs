@@ -116,6 +116,7 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
                         // Use the DETECTED binary name here
                         let _ = Command::new(&swww_bin)
                             .args([
+                                "--quiet",
                                 "img",
                                 &abs_path.to_string_lossy(),
                                 "-o",
@@ -126,7 +127,6 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
                                 "90",
                                 "--transition-fps",
                                 "60",
-                                "--quiet",
                             ])
                             .status()
                             .await;

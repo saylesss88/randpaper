@@ -67,6 +67,8 @@ wayland.windowManager.hyprland = {
 }
 ```
 
+- It's not required to also ad an exec for `swaybg`.
+
 Sway Example:
 
 ```nix
