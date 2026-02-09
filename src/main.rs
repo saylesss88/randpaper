@@ -2,13 +2,14 @@
 mod backends;
 mod cli;
 mod daemon;
+mod theme;
 mod traits;
 mod wallpaper;
 
 use crate::backends::hyprland::HyprlandBackend;
 use crate::backends::sway::SwayBackend;
 use clap::Parser;
-use cli::{BackendType, Cli}; // Assuming you have an enum in CLI for backend choice
+use cli::{BackendType, Cli};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -22,7 +23,6 @@ async fn main() -> anyhow::Result<()> {
         }
         BackendType::Sway => {
             log::info!("Using Sway backend");
-            // Assuming SwayBackend::new() or struct init
             let backend = SwayBackend {
                 outputs_override: cli.outputs.clone(),
             };
