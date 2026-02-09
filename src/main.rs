@@ -10,6 +10,6 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.backend {
         Backend::Sway => sway::run_sway_loop(cli).await,
-        Backend::Swww => hyprland::run_hyprpaper_loop(cli).await,
+        Backend::Hyprland => hyprland::run_swaybg_loop(cli).await,
     }
 }
