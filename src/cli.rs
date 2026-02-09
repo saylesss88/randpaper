@@ -23,6 +23,15 @@ pub struct Cli {
     /// Optional: Force specific outputs for Sway
     #[arg(short, long)]
     pub outputs: Vec<String>,
+
+    #[arg(short, long, default_value = "simple")]
+    pub transition_type: String,
+
+    #[arg(short = 's', long, default_value_t = 90u8)]
+    pub transition_step: u8,
+
+    #[arg(short = 'f', long, default_value_t = 30u8)]
+    pub transition_fps: u8,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

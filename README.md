@@ -100,17 +100,35 @@ randpaper ~/Pictures/wallpapers
 randpaper --time 5m --backend hyprland --renderer swww ~/Pictures/wallpapers
 ```
 
+**swww/awww Transitions**:
+
+```bash
+# Use fade transitions
+randpaper --renderer swww --transition-type fade --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers
+
+# Use wipe transitions
+randpaper --renderer swww --transition-type wipe --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers
+```
+
 - [Sample wallpaper repo](https://github.com/saylesss88/wallpapers2)
 
 **Advanced Options**
 
-| Flag             | Description                             | Default       |
-| :--------------- | :-------------------------------------- | :------------ |
-| `[DIR]`          | Directory containing images             | `.`           |
-| `-t, --time`     | Time between changes(e.g., 15m, 1h)     | `30m`         |
-| `-b, --backend`  | Detection backend: `sway` or `hyprland` | `sway`        |
-| `-o, --outputs`  | Specific outputs to target (Sway only)  | Auto-discover |
-| `-r, --renderer` | Renderer tool: `swaybg` or `swww`       | `swaybg`      |
+| Flag                    | Description                              | Default       |
+| :---------------------- | :--------------------------------------- | :------------ |
+| `[DIR]`                 | Directory containing images              | `.`           |
+| `-t, --time`            | Time between changes(e.g., 15m, 1h)      | `30m`         |
+| `-b, --backend`         | Detection backend: `sway` or `hyprland`  | `sway`        |
+| `-o, --outputs`         | Specific outputs to target (Sway only)   | Auto-discover |
+| `-r, --renderer`        | Renderer tool: `swaybg` or `swww`        | `swaybg`      |
+| `--transition-type`     | swww transition: `fade`, `wipe`, `outer` | `simple`      |
+| `-s, --transition-step` | swww transition step (0-100)             | `90`          |
+| `-f, --transition-fps`  | swww target frame rate for transitions   | `30`          |
+
+- `--transition-type`: Choose between (`simple`, `fade`, `wipe`, `outer`,
+  `inner`, `random`)
+
+> NOTE: All transition options are ignored when using `--renderer swaybg`.
 
 ---
 
