@@ -87,7 +87,7 @@ wayland.windowManager.sway = {
 ```
 
 > Note: `randpaper` manages the renderer process for you. You do not need a
-> separate `exec-once = swaybg ...` line in your config.
+> separate `exec-once = swaybg ...` or `exec-once = swww` line in your config.
 
 ---
 
