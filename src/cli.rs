@@ -2,29 +2,40 @@ use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
-#[command(author, version, about = "A random wallpaper setter daemon for Hyprland and Sway", long_about = None)]
+#[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// Directory containing wallpapers
     #[arg(default_value = ".")]
     pub wallpaper_dir: PathBuf,
 
-    /// Time interval for wallpaper updates (e.g., "30m", "1h", "300s")
+    /// Time interval for wallpaper updates
     #[arg(short, long, default_value = "30m")]
     pub time: String,
 
-    /// Which backend to use (hyprland or sway)
+    /// Which backend to use for Monitor Detection
     #[arg(short, long, value_enum, default_value_t = BackendType::Sway)]
     pub backend: BackendType,
 
-    /// Optional: Force specific outputs for Sway (ignored by Hyprland backend)
+    /// Which tool to use to set the wallpaper
+    #[arg(short, long, value_enum, default_value_t = RendererType::Swaybg)]
+    pub renderer: RendererType,
+
+    /// Optional: Force specific outputs for Sway
     #[arg(short, long)]
     pub outputs: Vec<String>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 pub enum BackendType {
-    /// Use the Hyprland IPC (hyprctl)
     Hyprland,
-    /// Use the Sway IPC
     Sway,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
+pub enum RendererType {
+    /// Uses 'swaybg' (Supports multiple monitors, no transitions)
+    Swaybg,
+    /// Uses 'swww' (Supports transitions, Hyprland specific)
+    Swww,
+    // Possibly add Hyprpaper in the future
 }
