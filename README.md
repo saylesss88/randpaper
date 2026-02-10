@@ -228,7 +228,7 @@ window#waybar {
 3. Reload Waybar to apply changes
 
 You may need to kill the process and relaunch it to see the changes or just
-reboot.
+reboot. Something like `pkill waybar && waybar &`.
 
 Obviously, the more hard-coded colors you replace with the dynamically generated
 CSS variables the more noticeable it will be.
