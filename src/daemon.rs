@@ -2,6 +2,7 @@ use crate::cli::{Cli, RendererType};
 use crate::theme::update_theme_file;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
+use anyhow::Context;
 use std::path::PathBuf;
 use std::time::Duration;
 use tokio::process::{Child, Command};
@@ -85,9 +86,9 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
 
         match cli.renderer {
             RendererType::Swaybg => {
-                // Use a closure that captures the cache
-                let pick_random = || cache.pick_random().clone();
+                let pick_random = || cache.pick_random().to_path_buf();
                 let args = build_swaybg_args(&monitors, pick_random, || "fill".to_string());
+
                 if !args.is_empty() {
                     if let Some(mut child) = current_swaybg.take() {
                         let _ = child.kill().await;
@@ -102,28 +103,33 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
                     }
                 }
             }
-
             RendererType::Swww => {
-                for monitor in &monitors {
-                    let img = cache.pick_random();
-                    let _ = update_theme_file(img);
+                let step = cli.transition_step.to_string();
+                let fps = cli.transition_fps.to_string();
 
-                    if let Ok(abs_path) = img.canonicalize() {
-                        let _ = Command::new(&swww_bin)
-                            .args([
-                                "img",
-                                &abs_path.to_string_lossy(),
-                                "-o",
-                                monitor,
-                                "--transition-type",
-                                &cli.transition_type,
-                                "--transition-step",
-                                &cli.transition_step.to_string(),
-                                "--transition-fps",
-                                &cli.transition_fps.to_string(),
-                            ])
-                            .status()
-                            .await;
+                for monitor in &monitors {
+                    let img = cache.pick_random(); // already absolute/canonical
+
+                    let out = Command::new(&swww_bin)
+                        .arg("img")
+                        .arg(img)
+                        .arg("-o")
+                        .arg(monitor)
+                        .arg("--transition-type")
+                        .arg(&cli.transition_type)
+                        .arg("--transition-step")
+                        .arg(&step)
+                        .arg("--transition-fps")
+                        .arg(&fps)
+                        .output()
+                        .await
+                        .with_context(|| format!("failed to run {swww_bin}"))?;
+
+                    if !out.status.success() {
+                        anyhow::bail!(
+                            "{swww_bin} failed: {}",
+                            String::from_utf8_lossy(&out.stderr)
+                        );
                     }
                 }
             }
