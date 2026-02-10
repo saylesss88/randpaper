@@ -172,12 +172,15 @@ include ~/.config/randpaper/themes/kitty.conf
 
 ## 🫟 Waybar Dynamic Theming (optional)
 
+<details>
+<summary> ✔️ Waybar Dynamic Theming </summary>
+
 `randpaper` automatically generates a Waybar CSS color file from the current
 wallpaper palette and writes it to:
 
 - `~/.config/randpaper/themes/waybar.css`
 
-This fine only defines color variables (it doesn't change your bar by itself).
+This file only defines color variables (it doesn't change your bar by itself).
 To use it, you import it from your Waybar `style.css` and then reference the
 variables in your existing rules.
 
@@ -196,7 +199,8 @@ Example of the generated `waybar.css` file:
 
 1. Import the generated file
 
-At the very top of your Waybar `style.css`:
+At the very top of your Waybar `style.css` (Change `YOUR_USER` to your
+username):
 
 ```css
 @import "/home/YOUR_USER/.config/randpaper/themes/waybar.css";
@@ -231,6 +235,8 @@ CSS variables the more noticeable it will be.
 
 > NOTE: Just adding the `@import` at the top makes the variables available, you
 > need to reference them for the changes to be applied.
+
+</details>
 
 ---
 
