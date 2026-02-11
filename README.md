@@ -264,6 +264,15 @@ bindsym $mod+n exec pkill -USR1 randpaper
 pkill -USR1 randpaper
 ```
 
+You can cycle wallpapers & themes with a simple `randpaper` command:
+
+```text
+bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
+```
+
+Now when you run the above keybind, you will get a new wallpaper, terminal
+theme, and waybar theme.
+
 ---
 
 ## ⚙️ How it Works
