@@ -19,6 +19,8 @@ match the image palette.
   current wallpaper and generates config files for **Ghostty**, **Kitty**, and
   **Foot**, keeping your terminal in sync with your desktop.
   - 🫟 **Waybar Theming**: Generates CSS variables based on the image palette.
+    and reloads Waybar when it changes wallpapers applying the theming
+    automatically.
 
 - 🖥️ **Multi-Monitor**: Assigns a unique random image to every active output
   simultaneously.
@@ -225,10 +227,9 @@ window#waybar {
 }
 ```
 
-3. Reload Waybar to apply changes
-
-You may need to kill the process and relaunch it to see the changes or just
-reboot. Something like `pkill waybar && waybar &`.
+3. `randpaper` automatically reloads Waybar when it changes wallpapers, keeping
+   your bar perfectly themed without manual intervention. (`SIGUSR2`
+   zero-flicker reload)
 
 Obviously, the more hard-coded colors you replace with the dynamically generated
 CSS variables the more noticeable it will be.
