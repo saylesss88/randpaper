@@ -31,6 +31,8 @@ match the image palette.
 - 🛠️ **Modular Backends**: Works seamlessly with **Sway** and **Hyprland** (via
   Sway IPC or `hyprctl`) and supports both `swaybg` and `swww` renderers.
 
+- Support for both `swww` and its replacement `awww`.
+
 ---
 
 ## 🛠 Installation
