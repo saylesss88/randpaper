@@ -68,34 +68,40 @@ fn atomic_write(path: &Path, contents: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Helper to reload or start a process with retries
-fn reload_or_start_waybar() -> anyhow::Result<()> {
-    // 1) Reload if running (Waybar supports SIGUSR2 reload)
-    let reloaded = Command::new("pkill")
+/// Helper to reload waybar
+fn reload_waybar_only() {
+    let _ = Command::new("pkill")
         .args(["-USR2", "-x", "waybar"])
-        .status()
-        .map(|s| s.success())
-        .unwrap_or(false);
-
-    if reloaded {
-        log::info!("Reloaded waybar (SIGUSR2)");
-        return Ok(());
-    }
-
-    // 2) Not running (or pkill missing/failed). Start ONLY if not already running.
-    // This avoids duplicates even if the previous check failed for some reason.
-    let status = Command::new("sh")
-        .args(["-c", "pgrep -x waybar >/dev/null || (waybar & disown)"])
-        .status()
-        .context("failed to run waybar start guard")?;
-
-    if status.success() {
-        log::info!("Ensured waybar is running");
-        Ok(())
-    } else {
-        anyhow::bail!("Failed to ensure waybar is running (guard command failed)");
-    }
+        .status();
 }
+
+// fn reload_or_start_waybar() -> anyhow::Result<()> {
+//     // 1) Reload if running (Waybar supports SIGUSR2 reload)
+//     let reloaded = Command::new("pkill")
+//         .args(["-USR2", "-x", "waybar"])
+//         .status()
+//         .map(|s| s.success())
+//         .unwrap_or(false);
+
+//     if reloaded {
+//         log::info!("Reloaded waybar (SIGUSR2)");
+//         return Ok(());
+//     }
+
+//     // 2) Not running (or pkill missing/failed). Start ONLY if not already running.
+//     // This avoids duplicates even if the previous check failed for some reason.
+//     let status = Command::new("sh")
+//         .args(["-c", "pgrep -x waybar >/dev/null || (waybar & disown)"])
+//         .status()
+//         .context("failed to run waybar start guard")?;
+
+//     if status.success() {
+//         log::info!("Ensured waybar is running");
+//         Ok(())
+//     } else {
+//         anyhow::bail!("Failed to ensure waybar is running (guard command failed)");
+//     }
+// }
 
 pub fn write_waybar_css(
     theme_dir: &Path,
@@ -222,7 +228,8 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     thread::sleep(Duration::from_millis(100));
 
     // Reload or start Waybar
-    let _ = reload_or_start_waybar();
+    // let _ = reload_or_start_waybar();
+    () = reload_waybar_only();
 
     // Best-effort reload terminals (don't auto-start if not running)
     // let _ = Command::new("pkill").args(["-USR2", "-x", "foot"]).status();
