@@ -10,6 +10,7 @@ use crate::backends::hyprland::HyprlandBackend;
 use crate::backends::sway::SwayBackend;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
+use anyhow::Context;
 use clap::Parser;
 use cli::{BackendType, Cli, RendererType};
 use tokio::process::Command;
@@ -52,11 +53,21 @@ async fn oneshot_mode(cli: &Cli) -> anyhow::Result<()> {
             }
 
             // Kill existing swaybg instances
-            let _ = Command::new("pkill").args(["-x", "swaybg"]).status().await;
+            // let _ = Command::new("pkill").args(["-x", "swaybg"]).status().await;
+            let _ = Command::new("pkill")
+                .args(["-x", "swaybg"])
+                .status()
+                .await
+                .context("oneshot: pkill -x swaybg")?;
 
             // Start new swaybg
-            Command::new("swaybg").args(&args).spawn()?;
+            // Command::new("swaybg").args(&args).spawn()?;
+            Command::new("swaybg")
+                .args(&args)
+                .spawn()
+                .context("oneshot: spawn swaybg")?;
         }
+
         RendererType::Swww => {
             let swww_bin = daemon::detect_swww_binary().await; // Use from daemon module
             let step = cli.transition_step.to_string();
@@ -76,7 +87,8 @@ async fn oneshot_mode(cli: &Cli) -> anyhow::Result<()> {
                     .arg("--transition-fps")
                     .arg(&fps)
                     .status()
-                    .await?;
+                    .await
+                    .with_context(|| format!("oneshot: swww img -o {monitor}"))?;
             }
         }
     }
