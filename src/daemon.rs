@@ -9,7 +9,7 @@ use tokio::process::{Child, Command};
 use tokio::signal::unix::{SignalKind, signal};
 use tokio::time::sleep;
 
-async fn detect_swww_binary() -> String {
+pub async fn detect_swww_binary() -> String {
     // Try 'swww' first
     if Command::new("swww").arg("--help").output().await.is_ok() {
         return "swww".to_string();
@@ -45,9 +45,12 @@ where
 }
 
 pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
+    crate::theme::ensure_theme_exists()?;
+
     let cache = WallpaperCache::new(&cli.wallpaper_dir)?;
     let period: Duration =
-        parse_duration::parse(&cli.time).map_err(|e| anyhow::anyhow!("invalid duration: {e}"))?;
+        parse_duration::parse(cli.time.as_ref().expect("daemon mode requires --time"))
+            .map_err(|e| anyhow::anyhow!("invalid duration: {e}"))?;
 
     let mut current_swaybg: Option<Child> = None;
 
