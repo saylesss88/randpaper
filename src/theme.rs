@@ -210,6 +210,8 @@ pub fn ensure_theme_exists() -> anyhow::Result<()> {
 }
 
 pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
+    log::info!("updating theme for image: {}", image_path.display());
+
     let img = image::open(image_path).context("Failed to open image for theming")?;
     let img = img.resize(300, 300, image::imageops::FilterType::Nearest);
     let buffer = img.to_rgb8();
