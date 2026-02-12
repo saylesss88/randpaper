@@ -68,54 +68,82 @@ fn atomic_write(path: &Path, contents: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+// fn reload_or_start(
+//     process_name: &str,
+//     signal: &str,
+//     start_command: &str,
+//     max_retries: u8,
+// ) -> anyhow::Result<()> {
+//     // Try to reload existing process
+//     let reloaded = Command::new("pkill")
+//         .args([signal, "-x", process_name])
+//         .status()
+//         .map(|s| s.success())
+//         .unwrap_or(false);
+
+//     if reloaded {
+//         log::info!("Reloaded {process_name}");
+//         return Ok(());
+//     }
+
+//     // Process not running, try to start it with retries
+//     log::info!("{process_name} not running, attempting to start...");
+//     for attempt in 1..=max_retries {
+//         match Command::new(start_command).spawn() {
+//             Ok(mut child) => {
+//                 thread::sleep(Duration::from_millis(500));
+//                 match child.try_wait() {
+//                     Ok(None) => {
+//                         log::info!("Started {process_name} on attempt {attempt}");
+//                         return Ok(());
+//                     }
+//                     Ok(Some(status)) => {
+//                         log::warn!("{process_name} exited immediately with status: {status}");
+//                     }
+//                     Err(e) => {
+//                         log::warn!("Failed to check {process_name} status: {e}");
+//                     }
+//                 }
+//             }
+//             Err(e) => {
+//                 log::error!("Failed to spawn {process_name} (attempt {attempt}): {e}");
+//             }
+//         }
+//         if attempt < max_retries {
+//             thread::sleep(Duration::from_secs(1));
+//         }
+//     }
+
+//     anyhow::bail!("Failed to start {process_name} after {max_retries} attempts")
+// }
+
 /// Helper to reload or start a process with retries
-fn reload_or_start(
-    process_name: &str,
-    signal: &str,
-    start_command: &str,
-    max_retries: u8,
-) -> anyhow::Result<()> {
-    // Try to reload existing process
+fn reload_or_start_waybar() -> anyhow::Result<()> {
+    // 1) Reload if running (Waybar supports SIGUSR2 reload)
     let reloaded = Command::new("pkill")
-        .args([signal, "-x", process_name])
+        .args(["-USR2", "-x", "waybar"])
         .status()
         .map(|s| s.success())
         .unwrap_or(false);
 
     if reloaded {
-        log::info!("Reloaded {process_name}");
+        log::info!("Reloaded waybar (SIGUSR2)");
         return Ok(());
     }
 
-    // Process not running, try to start it with retries
-    log::info!("{process_name} not running, attempting to start...");
-    for attempt in 1..=max_retries {
-        match Command::new(start_command).spawn() {
-            Ok(mut child) => {
-                thread::sleep(Duration::from_millis(500));
-                match child.try_wait() {
-                    Ok(None) => {
-                        log::info!("Started {process_name} on attempt {attempt}");
-                        return Ok(());
-                    }
-                    Ok(Some(status)) => {
-                        log::warn!("{process_name} exited immediately with status: {status}");
-                    }
-                    Err(e) => {
-                        log::warn!("Failed to check {process_name} status: {e}");
-                    }
-                }
-            }
-            Err(e) => {
-                log::error!("Failed to spawn {process_name} (attempt {attempt}): {e}");
-            }
-        }
-        if attempt < max_retries {
-            thread::sleep(Duration::from_secs(1));
-        }
-    }
+    // 2) Not running (or pkill missing/failed). Start ONLY if not already running.
+    // This avoids duplicates even if the previous check failed for some reason.
+    let status = Command::new("sh")
+        .args(["-c", "pgrep -x waybar >/dev/null || (waybar & disown)"])
+        .status()
+        .context("failed to run waybar start guard")?;
 
-    anyhow::bail!("Failed to start {process_name} after {max_retries} attempts")
+    if status.success() {
+        log::info!("Ensured waybar is running");
+        Ok(())
+    } else {
+        anyhow::bail!("Failed to ensure waybar is running (guard command failed)");
+    }
 }
 
 pub fn write_waybar_css(
@@ -241,7 +269,7 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     thread::sleep(Duration::from_millis(100));
 
     // Reload or start Waybar
-    let _ = reload_or_start("waybar", "-USR2", "waybar", 5);
+    let _ = reload_or_start_waybar();
 
     // Best-effort reload terminals (don't auto-start if not running)
     // let _ = Command::new("pkill").args(["-USR2", "-x", "foot"]).status();
@@ -250,14 +278,8 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
         .status();
     log::info!("Foot reload result: {foot_result:?}");
 
-    // let _ = Command::new("kitten").args(["@", "load-config"]).status();
     // Reload Kitty (explicit socket if needed)
-    let _ = Command::new("sh")
-        .args([
-            "-c",
-            "kitty @ --to unix:/tmp/kitty load-config 2>/dev/null || kitten @ load-config",
-        ])
-        .status();
+    let _ = Command::new("kitten").args(["@", "load-config"]).status();
 
     let _ = Command::new("pkill")
         .args(["-USR2", "-x", "ghostty"])
