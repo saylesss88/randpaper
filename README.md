@@ -170,7 +170,7 @@ randpaper --renderer swww --transition-type wipe --transition-step 90 --transiti
 
 ## 🎨 Automatic Terminal Theming
 
-randpaper automatically extracts a 16-color palette from your wallpaper and
+`randpaper` automatically extracts a 16-color palette from your wallpaper and
 generates theme files in `~/.config/randpaper/themes/`.
 
 To use them, add the include line to your terminal config:
@@ -202,6 +202,9 @@ include ~/.config/randpaper/themes/kitty.conf
 
 > Note: `randpaper` attempts to live-reload `foot` (via `SIGUSR1`) and `kitty`
 > (via `kitten`) automatically when the wallpaper changes.
+
+- You may have to close the terminal and reopen it for the new theme to be
+  applied.
 
 ---
 
@@ -336,7 +339,7 @@ theme, and waybar theme.
 1. **Startup**: Caches all valid image paths (`jpg`, `png`, `bmp`, `webp`) from
    the target directory into memory.
 
-2 **Loop**: Every interval (e.g., 30m):
+2 **Loop**(daemon mode): Every interval (e.g., 30m):
 
 - Queries active monitors via IPC.
 
@@ -348,6 +351,8 @@ theme, and waybar theme.
   update the display.
 
 - Sleeps efficiently until the next cycle.
+
+3. One-Shot (no `--time`): Picks wallpaper, updates themes, exits immediately.
 
 ---
 

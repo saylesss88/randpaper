@@ -223,5 +223,14 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
             }
         }
     }
+
+    // Best-effort reload terminals
+    let _ = Command::new("pkill").args(["-USR1", "-x", "foot"]).status();
+
+    let _ = Command::new("kitten").args(["@", "load-config"]).status();
+
+    let _ = Command::new("pkill")
+        .args(["-USR1", "-x", "ghostty"])
+        .status();
     Ok(())
 }

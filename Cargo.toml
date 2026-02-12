@@ -1,6 +1,6 @@
 [package]
 name = "randpaper"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 description = "Sets a different random wallpaper per monitor every N minutes"
 readme = "README.md"
