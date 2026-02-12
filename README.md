@@ -118,12 +118,18 @@ randpaper --time 1h --renderer swww --transition-type fade ~/Pictures/wallpapers
 **One-Shot Mode (Pick Once & Exit)**
 
 Without the `--time` flag, `randpaper` picks a random wallpaper, updates themes,
-and exits immediately:
+and exits immediately.
+
+In Sway, it's recommended to run one-shot via a compositor keybind so it
+inherits the correct session/IPC environment.(i.e., running
+`randpaper ~/Pictures/wallpapers`from the command line doesn't work as expected)
+
+```conf
+# Sway: cycle wallpaper + themes now (one-shot)
+bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
+```
 
 ```bash
-# Pick one wallpaper + update themes, then exit
-randpaper ~/Pictures/wallpapers
-
 # Same, but with Hyprland backend
 randpaper --backend hyprland ~/Pictures/wallpapers
 ```
@@ -200,15 +206,20 @@ File: `~/.config/kitty/kitty.conf`
 include ~/.config/randpaper/themes/kitty.conf
 ```
 
-> Note: `randpaper` attempts to live-reload `foot` (via `SIGUSR1`) and `kitty`
-> (via `kitten`) automatically when the wallpaper changes.
+**Live-Reload of Terminal Themes**
 
-- You may have to close the terminal and reopen it for the new theme to be
-  applied.
+- **Ghostty**: live reload works with either "cycle" keybind (i.e., theme
+  updates immediately with either `pkill -USR1 randpaper` from either a keybind
+  or the command line or a keybind set to
+  `exec randpaper ~/Pictures/wallpapers`)
+
+- **Foot / Kitty**: the theme file is updated, but existing windows may not
+  live-reload reliably; close and reopen the terminal to pick up the new theme.
+  (Work in Progress)
 
 ---
 
-## 🫟 Waybar Dynamic Theming (optional)
+## 🫟 Waybar Dynamic Theming (Optional)
 
 <details>
 <summary> ✔️ Waybar Dynamic Theming </summary>
@@ -353,6 +364,9 @@ theme, and waybar theme.
 - Sleeps efficiently until the next cycle.
 
 3. One-Shot (no `--time`): Picks wallpaper, updates themes, exits immediately.
+
+- Works reliably as a keybind, may have to close out terminal and relaunch for
+  the new theme to be applied.
 
 ---
 
