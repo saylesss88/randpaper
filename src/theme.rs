@@ -68,6 +68,56 @@ fn atomic_write(path: &Path, contents: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Helper to reload or start a process with retries
+fn reload_or_start(
+    process_name: &str,
+    signal: &str,
+    start_command: &str,
+    max_retries: u8,
+) -> anyhow::Result<()> {
+    // Try to reload existing process
+    let reloaded = Command::new("pkill")
+        .args([signal, "-x", process_name])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+
+    if reloaded {
+        log::info!("Reloaded {process_name}");
+        return Ok(());
+    }
+
+    // Process not running, try to start it with retries
+    log::info!("{process_name} not running, attempting to start...");
+    for attempt in 1..=max_retries {
+        match Command::new(start_command).spawn() {
+            Ok(mut child) => {
+                thread::sleep(Duration::from_millis(500));
+                match child.try_wait() {
+                    Ok(None) => {
+                        log::info!("Started {process_name} on attempt {attempt}");
+                        return Ok(());
+                    }
+                    Ok(Some(status)) => {
+                        log::warn!("{process_name} exited immediately with status: {status}");
+                    }
+                    Err(e) => {
+                        log::warn!("Failed to check {process_name} status: {e}");
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to spawn {process_name} (attempt {attempt}): {e}");
+            }
+        }
+        if attempt < max_retries {
+            thread::sleep(Duration::from_secs(1));
+        }
+    }
+
+    anyhow::bail!("Failed to start {process_name} after {max_retries} attempts")
+}
+
 pub fn write_waybar_css(
     theme_dir: &Path,
     palette: &[color_thief::Color],
@@ -94,7 +144,7 @@ pub fn write_waybar_css(
     let _ = writeln!(css, "@define-color rp_muted {};", bg.hex());
 
     let out = theme_dir.join("waybar.css");
-    atomic_write(&out, &css)?; // Use atomic write here
+    atomic_write(&out, &css)?;
     Ok(out)
 }
 
@@ -187,50 +237,31 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
 
     log::info!("Updated themes in {}", theme_dir.display());
 
-    // If waybar exists, ask it to reload; otherwise start it.
-    let reloaded = Command::new("pkill")
-        .args(["-USR2", "-x", "waybar"])
-        .status()
-        .map(|s| s.success())
-        .unwrap_or(false);
+    // Small delay to ensure filesystem has flushed the writes
+    thread::sleep(Duration::from_millis(100));
 
-    if !reloaded {
-        // Try to start waybar with retries (compositor might not be ready yet)
-        for attempt in 1..=5 {
-            match Command::new("waybar").spawn() {
-                Ok(mut child) => {
-                    thread::sleep(Duration::from_millis(500));
-                    // Check if process is still alive
-                    match child.try_wait() {
-                        Ok(None) => {
-                            log::info!("Started waybar on attempt {attempt}");
-                            break;
-                        }
-                        Ok(Some(status)) => {
-                            log::warn!("Waybar exited immediately with status: {status}");
-                        }
-                        Err(e) => {
-                            log::warn!("Failed to check waybar status: {e}");
-                        }
-                    }
-                }
-                Err(e) => {
-                    log::error!("Failed to spawn waybar (attempt {attempt}): {e}");
-                }
-            }
-            if attempt < 5 {
-                thread::sleep(Duration::from_secs(1));
-            }
-        }
-    }
+    // Reload or start Waybar
+    let _ = reload_or_start("waybar", "-USR2", "waybar", 5);
 
-    // Best-effort reload terminals
-    let _ = Command::new("pkill").args(["-USR1", "-x", "foot"]).status();
+    // Best-effort reload terminals (don't auto-start if not running)
+    // let _ = Command::new("pkill").args(["-USR2", "-x", "foot"]).status();
+    let foot_result = Command::new("sh")
+        .args(["-c", "pkill -USR2 foot; sleep 0.05; pkill -USR2 foot"])
+        .status();
+    log::info!("Foot reload result: {foot_result:?}");
 
-    let _ = Command::new("kitten").args(["@", "load-config"]).status();
+    // let _ = Command::new("kitten").args(["@", "load-config"]).status();
+    // Reload Kitty (explicit socket if needed)
+    let _ = Command::new("sh")
+        .args([
+            "-c",
+            "kitty @ --to unix:/tmp/kitty load-config 2>/dev/null || kitten @ load-config",
+        ])
+        .status();
 
     let _ = Command::new("pkill")
-        .args(["-USR1", "-x", "ghostty"])
+        .args(["-USR2", "-x", "ghostty"])
         .status();
+
     Ok(())
 }
