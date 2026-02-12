@@ -68,55 +68,6 @@ fn atomic_write(path: &Path, contents: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-// fn reload_or_start(
-//     process_name: &str,
-//     signal: &str,
-//     start_command: &str,
-//     max_retries: u8,
-// ) -> anyhow::Result<()> {
-//     // Try to reload existing process
-//     let reloaded = Command::new("pkill")
-//         .args([signal, "-x", process_name])
-//         .status()
-//         .map(|s| s.success())
-//         .unwrap_or(false);
-
-//     if reloaded {
-//         log::info!("Reloaded {process_name}");
-//         return Ok(());
-//     }
-
-//     // Process not running, try to start it with retries
-//     log::info!("{process_name} not running, attempting to start...");
-//     for attempt in 1..=max_retries {
-//         match Command::new(start_command).spawn() {
-//             Ok(mut child) => {
-//                 thread::sleep(Duration::from_millis(500));
-//                 match child.try_wait() {
-//                     Ok(None) => {
-//                         log::info!("Started {process_name} on attempt {attempt}");
-//                         return Ok(());
-//                     }
-//                     Ok(Some(status)) => {
-//                         log::warn!("{process_name} exited immediately with status: {status}");
-//                     }
-//                     Err(e) => {
-//                         log::warn!("Failed to check {process_name} status: {e}");
-//                     }
-//                 }
-//             }
-//             Err(e) => {
-//                 log::error!("Failed to spawn {process_name} (attempt {attempt}): {e}");
-//             }
-//         }
-//         if attempt < max_retries {
-//             thread::sleep(Duration::from_secs(1));
-//         }
-//     }
-
-//     anyhow::bail!("Failed to start {process_name} after {max_retries} attempts")
-// }
-
 /// Helper to reload or start a process with retries
 fn reload_or_start_waybar() -> anyhow::Result<()> {
     // 1) Reload if running (Waybar supports SIGUSR2 reload)

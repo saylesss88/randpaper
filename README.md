@@ -226,10 +226,19 @@ include ~/.config/randpaper/themes/kitty.conf
 <details>
 <summary> ✔️ Waybar Dynamic Theming </summary>
 
-> ⚠️ Important: Avoid Duplicate Waybar Instances If you are using `randpaper`
-> for dynamic theming, it will automatically launch `waybar` for you. Do not add
-> exec `waybar` to your WM/compositor config, as this will cause multiple
-> instances to run simultaneously.
+To use `randpaper` with a `waybar` setup, ensure you call the daemon via `exec`
+in your Sway or Hyprland config.
+
+(Example `~/.config/sway/config`):
+
+```config
+exec randpaper --time 10m ~/Pictures/wallpapers
+
+bar {
+    swaybar_command waybar
+}
+# ---snip---
+```
 
 `randpaper` automatically generates a Waybar CSS color file from the current
 wallpaper palette and writes it to:
