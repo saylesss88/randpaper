@@ -9,8 +9,8 @@ pub struct Cli {
     pub wallpaper_dir: PathBuf,
 
     /// Time interval for wallpaper updates
-    #[arg(short, long, default_value = "30m")]
-    pub time: String,
+    #[arg(short, long)]
+    pub time: Option<String>,
 
     /// Which backend to use for Monitor Detection
     #[arg(short, long, value_enum, default_value_t = BackendType::Sway)]
