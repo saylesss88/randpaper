@@ -8,6 +8,7 @@ pub struct WallpaperCache {
 
 impl WallpaperCache {
     pub fn new<P: AsRef<Path>>(dir: P) -> anyhow::Result<Self> {
+        crate::theme::ensure_theme_exists()?;
         let mut files = Vec::new();
 
         for entry in WalkDir::new(dir) {
