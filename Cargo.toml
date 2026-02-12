@@ -1,6 +1,6 @@
 [package]
 name = "randpaper"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 description = "Sets a different random wallpaper per monitor every N minutes"
 readme = "README.md"
@@ -37,6 +37,11 @@ swayipc-async = "3.0.0"
 swayipc-types = "2.0.1"
 tokio = {version = "1.49.0", features = ["full"]}
 walkdir = "2.5.0"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
 
 [profile.release]
 opt-level = "s"

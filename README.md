@@ -25,8 +25,11 @@ match the image palette.
 - 🖥️ **Multi-Monitor**: Assigns a unique random image to every active output
   simultaneously.
 
+- 🔄 **Dual Operating Modes**: Run as a background daemon with automatic
+  cycling, or use one-shot mode for manual wallpaper changes.
+
 - 🛠️ **Modular Backends**: Works seamlessly with **Sway** and **Hyprland** (via
-  `hyprctl` or Sway IPC) and supports both `swaybg` and `swww` renderers.
+  Sway IPC or `hyprctl`) and supports both `swaybg` and `swww` renderers.
 
 ---
 
@@ -83,8 +86,8 @@ Sway Example:
 ```nix
 wayland.windowManager.sway = {
   extraConfig = ''
-    # Default backend is Sway, default time is 30m
-     exec randpaper /home/your-user/wallpapers
+    # Default backend is Sway
+     exec randpaper --time 30m /home/your-user/wallpapers
   '';
 };
 ```
@@ -96,12 +99,42 @@ wayland.windowManager.sway = {
 
 ## 🧾 Usage
 
+**Daemon Mode (Background Process)**
+
+When you provide the `--time` flag, `randpaper` runs as a daemon and
+automatically cycles wallpapers at the specified interval:
+
 ```bash
-# Defaults to changing every 30m using swaybg
-randpaper ~/Pictures/wallpapers
-# Custom: change every 5 minutes using Hyprland detection + SWWW transitions
+# Change every 30 minutes (default time if --time not specified with daemon)
+randpaper --time 30m ~/Pictures/wallpapers
+
+# Change every 5 minutes using Hyprland + swww transitions
 randpaper --time 5m --backend hyprland --renderer swww ~/Pictures/wallpapers
+
+# Change every hour with custom transitions
+randpaper --time 1h --renderer swww --transition-type fade ~/Pictures/wallpapers
 ```
+
+**One-Shot Mode (Pick Once & Exit)**
+
+Without the `--time` flag, `randpaper` picks a random wallpaper, updates themes,
+and exits immediately:
+
+```bash
+# Pick one wallpaper + update themes, then exit
+randpaper ~/Pictures/wallpapers
+
+# Same, but with Hyprland backend
+randpaper --backend hyprland ~/Pictures/wallpapers
+```
+
+**Use cases for one-shot mode**:
+
+- Manual wallpaper changes via keybinds
+
+- Scripted theme updates
+
+- Testing without running a daemon
 
 **swww/awww Transitions**:
 
@@ -177,6 +210,11 @@ include ~/.config/randpaper/themes/kitty.conf
 <details>
 <summary> ✔️ Waybar Dynamic Theming </summary>
 
+> ⚠️ Important: Avoid Duplicate Waybar Instances If you are using `randpaper`
+> for dynamic theming, it will automatically launch `waybar` for you. Do not add
+> exec `waybar` to your WM/compositor config, as this will cause multiple
+> instances to run simultaneously.
+
 `randpaper` automatically generates a Waybar CSS color file from the current
 wallpaper palette and writes it to:
 
@@ -241,10 +279,34 @@ CSS variables the more noticeable it will be.
 
 ---
 
-## ⏭️ Cycling Wallpapers
+## ⏭️ Cycling Wallpapers & Themes
 
-You can force `randpaper` to cycle to the next image immediately by sending it
-the `SIGUSR1` signal.
+### Manual Wallpaper Change (Recommended)
+
+The simplest way to instantly change wallpapers is to run one-shot mode while
+your daemon is running:
+
+**Hyprland Config**:
+
+```text
+bind = $mainMod SHIFT, N, exec, randpaper ~/Pictures/wallpapers
+```
+
+**Sway Config**:
+
+```text
+bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
+```
+
+This picks a new wallpaper, updates all themes (terminal + Waybar), and exits.
+Your background daemon continues running for automatic cycles.
+
+---
+
+### Signal Running Daemon (Alternative)
+
+You can also force the daemon to cycle immediately without spawning a separate
+process:
 
 **Hyprland Config**:
 
@@ -262,12 +324,6 @@ bindsym $mod+n exec pkill -USR1 randpaper
 
 ```bash
 pkill -USR1 randpaper
-```
-
-You can cycle wallpapers & themes with a simple `randpaper` command:
-
-```text
-bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
 ```
 
 Now when you run the above keybind, you will get a new wallpaper, terminal
