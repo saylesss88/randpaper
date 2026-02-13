@@ -106,9 +106,6 @@ wayland.windowManager.sway = {
 
 **Daemon Mode (Background Process)**
 
-> NOTE: `randpaper` commands with `--renderer swww` will only work from the
-> command line if the `swww-daemon` isn't already running.
-
 When you provide the `--time` flag, `randpaper` runs as a daemon and
 automatically cycles wallpapers at the specified interval:
 
@@ -151,9 +148,6 @@ bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
 - Testing without running a daemon
 
 **swww/awww Transitions**:
-
-> NOTE: the following commands only work if the `swww-daemon` isn't already
-> running. If it is running, cycle with one-shot.
 
 ```bash
 # Use fade transitions

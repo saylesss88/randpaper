@@ -35,9 +35,8 @@ async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
 
     match status {
         Ok(exit_status) if exit_status.success() => {
-            // Daemon is already running
+            // Daemon is already running, do nothing
             log::info!("{daemon_name} is already running");
-            Ok(())
         }
         _ => {
             // Daemon not running, start it
@@ -48,9 +47,10 @@ async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
 
             // Give it time to initialize
             sleep(Duration::from_millis(500)).await;
-            Ok(())
         }
     }
+
+    Ok(())
 }
 
 fn build_swaybg_args<F, M>(monitors: &[String], pick_random: F, mode: M) -> Vec<String>
