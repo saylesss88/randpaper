@@ -23,6 +23,36 @@ pub async fn detect_swww_binary() -> String {
     "swww".to_string()
 }
 
+async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
+    let daemon_name = format!("{swww_bin}-daemon");
+
+    // Check if daemon is already running using pgrep
+    let status = Command::new("pgrep")
+        .arg("-x") // Exact match
+        .arg(&daemon_name)
+        .status()
+        .await;
+
+    match status {
+        Ok(exit_status) if exit_status.success() => {
+            // Daemon is already running
+            log::info!("{daemon_name} is already running");
+            Ok(())
+        }
+        _ => {
+            // Daemon not running, start it
+            log::info!("Starting {daemon_name}...");
+            Command::new(&daemon_name)
+                .spawn()
+                .with_context(|| format!("failed to spawn {daemon_name}"))?;
+
+            // Give it time to initialize
+            sleep(Duration::from_millis(500)).await;
+            Ok(())
+        }
+    }
+}
+
 fn build_swaybg_args<F, M>(monitors: &[String], pick_random: F, mode: M) -> Vec<String>
 where
     F: Fn() -> PathBuf,
@@ -67,9 +97,7 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
     );
 
     if cli.renderer == RendererType::Swww {
-        let daemon_cmd = format!("{swww_bin}-daemon");
-        let _ = Command::new(&daemon_cmd).spawn();
-        sleep(Duration::from_millis(500)).await;
+        ensure_swww_daemon(&swww_bin).await?;
     }
 
     let mut sig_usr1 = signal(SignalKind::user_defined1())?;
