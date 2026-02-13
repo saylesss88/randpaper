@@ -48,7 +48,7 @@ cargo install randpaper
 ```
 
 <details>
-<summary> ✔️ **Nix** </summary>
+<summary> ✔️ Nix </summary>
 
 Add as a flake input:
 
@@ -105,6 +105,9 @@ wayland.windowManager.sway = {
 ## 🧾 Usage
 
 **Daemon Mode (Background Process)**
+
+> NOTE: `randpaper` commands with `--renderer swww` will only work from the
+> command line if the `swww-daemon` isn't already running.
 
 When you provide the `--time` flag, `randpaper` runs as a daemon and
 automatically cycles wallpapers at the specified interval:
