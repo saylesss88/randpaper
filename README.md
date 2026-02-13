@@ -2,14 +2,13 @@
 
 [![Nix](https://img.shields.io/badge/Nix-5277C3?style=flat&logo=nixos&logoColor=white)](https://nixos.org)
 
-# randpaper - lightweight wallpaper & theme utility
+# randpaper - A high-performance wallpaper & theme daemon for Wayland
 
-A minimalist, high-performance wallpaper daemon for Wayland. `randpaper` keeps
-your workspace fresh by assigning unique, randomized backgrounds to each of your
-monitors at regular intervals and optionally syncing your terminal theme to
-match the image palette.
+`randpaper` is a lightweight Rust utility designed for efficiency. It manages
+per-monitor wallpaper rotation and optional system-wide theme
+synchronization—replacing complex script chains with a single, optimized binary.
 
-## 🚀 Features
+# 🚀 Features
 
 - ⚡ **Performance**: Written in Rust using `tokio`. Scans your image directory
   once into memory (caching paths) to prevent disk I/O spikes, even with massive
@@ -48,7 +47,8 @@ cargo install --git https://github.com/saylesss88/randpaper
 cargo install randpaper
 ```
 
-**Nix**
+<details>
+<summary> ✔️ **Nix** </summary>
 
 Add as a flake input:
 
@@ -97,6 +97,8 @@ wayland.windowManager.sway = {
 > Note: `randpaper` manages the renderer process for you. You do not need a
 > separate `exec-once = swaybg ...` or `exec-once = swww` line in your config.
 
+</details>
+
 ---
 
 ## 🧾 Usage
@@ -122,8 +124,8 @@ randpaper --time 1h --renderer swww --transition-type fade ~/Pictures/wallpapers
 Without the `--time` flag, `randpaper` picks a random wallpaper, updates themes,
 and exits immediately.
 
-In Sway, it's recommended to run one-shot via a compositor keybind so it
-inherits the correct session/IPC environment.(i.e., running
+It's recommended to run one-shot via a compositor keybind so it inherits the
+correct session/IPC environment.(i.e., running
 `randpaper ~/Pictures/wallpapers`from the command line doesn't work as expected)
 
 ```conf
@@ -131,9 +133,9 @@ inherits the correct session/IPC environment.(i.e., running
 bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
 ```
 
-```bash
-# Same, but with Hyprland backend
-randpaper --backend hyprland ~/Pictures/wallpapers
+```conf
+# Hyprland: cycle wallpaper + themes (one-shot)
+"$mod SHIFT,N,exec, randpaper --backend hyprland /home/jr/Pictures/wallpapers2"
 ```
 
 **Use cases for one-shot mode**:
@@ -150,8 +152,8 @@ randpaper --backend hyprland ~/Pictures/wallpapers
 # Use fade transitions
 randpaper --renderer swww --transition-type fade --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers
 
-# Use wipe transitions
-randpaper --renderer swww --transition-type wipe --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers
+# Use wipe transitions for hyprland
+randpaper --renderer swww --transition-type wipe --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers --backend hyprland
 ```
 
 - [Sample wallpaper repo](https://github.com/saylesss88/wallpapers2)
@@ -213,7 +215,8 @@ include ~/.config/randpaper/themes/kitty.conf
 - **Ghostty**: live reload works with either "cycle" keybind (i.e., theme
   updates immediately with either `pkill -USR1 randpaper` from either a keybind
   or the command line or a keybind set to
-  `exec randpaper ~/Pictures/wallpapers`)
+  `exec randpaper ~/Pictures/wallpapers`)(Tested on Fedora with Sway, expect
+  different behavior on NixOS)
 
 - **Foot / Kitty**: the theme file is updated, but existing windows may not
   live-reload reliably; close and reopen the terminal to pick up the new theme.
@@ -229,7 +232,7 @@ include ~/.config/randpaper/themes/kitty.conf
 To use `randpaper` with a `waybar` setup, ensure you call the daemon via `exec`
 in your Sway or Hyprland config.
 
-(Example `~/.config/sway/config`):
+(Sway Example `~/.config/sway/config`):
 
 ```config
 exec randpaper --time 10m ~/Pictures/wallpapers
@@ -300,6 +303,11 @@ CSS variables the more noticeable it will be.
 > NOTE: Just adding the `@import` at the top makes the variables available, you
 > need to reference them for the changes to be applied.
 
+- [NixOS Waybar Example](https://github.com/saylesss88/flake/blob/main/home/hypr/waybar.nix)
+
+- With Hyprland on NixOS, after cycling with one-shot run `pkill -USR2 waybar`
+  to apply the new theme.
+
 </details>
 
 ---
@@ -314,7 +322,7 @@ your daemon is running:
 **Hyprland Config**:
 
 ```text
-bind = $mainMod SHIFT, N, exec, randpaper ~/Pictures/wallpapers
+bind = $mainMod SHIFT, N, exec, randpaper ~/Pictures/wallpapers --backend hyprland
 ```
 
 **Sway Config**:
@@ -328,16 +336,10 @@ Your background daemon continues running for automatic cycles.
 
 ---
 
-### Signal Running Daemon (Alternative)
+### Signal Running Daemon (Alternative for Sway)
 
 You can also force the daemon to cycle immediately without spawning a separate
 process:
-
-**Hyprland Config**:
-
-```text
-bind = $mainMod, N, exec, pkill -USR1 randpaper
-```
 
 **Sway Config**:
 
@@ -353,6 +355,10 @@ pkill -USR1 randpaper
 
 Now when you run the above keybind, you will get a new wallpaper, terminal
 theme, and waybar theme.
+
+- This may also work with Hyprland on a standard filesystem hierarchy OS, I
+  haven't been able to test yet. For NixOS, use the one-shot to cycle wallpapers
+  & themes.
 
 ---
 
