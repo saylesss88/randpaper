@@ -222,6 +222,31 @@ include ~/.config/randpaper/themes/kitty.conf
   live-reload reliably; close and reopen the terminal to pick up the new theme.
   (Work in Progress)
 
+<details>
+<summary> ✔️**GhosTTY on NixOS dynamic theming** </summary>
+
+```nix
+# home.nix or ghostty.nix
+programs.ghostty = {
+  enable = true;
+  settings = {
+    # The '?' makes the include optional/non-blocking
+    config-file = "?~/.config/randpaper/themes/ghostty.config";
+
+    # Your other persistent settings
+    font-family = "FiraCode Nerd Font";
+    theme = "dark"; # Base theme to fallback on
+  };
+};
+```
+
+- On boot up, the generated theme will be applied.
+
+- Run the cycle command then type `pkill -USR2 ghostty` to apply the theme
+  instantly.
+
+</details>
+
 ---
 
 ## 🫟 Waybar Dynamic Theming (Optional)
