@@ -75,6 +75,7 @@ wayland.windowManager.hyprland = {
   settings = {
     exec-once = [
   # Standard Usage
+  "swww-daemon" # `exec-once "swww-daemon"` only required if using `--renderer swww`
   "randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland --renderer swww"
   # UWSM Usage
   "uwsm app -- randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland"
@@ -95,7 +96,7 @@ wayland.windowManager.sway = {
 ```
 
 > Note: `randpaper` manages the renderer process for you. You do not need a
-> separate `exec-once = swaybg ...` or `exec-once = swww` line in your config.
+> separate `exec-once = swaybg ...` line in your config.
 
 </details>
 
@@ -147,6 +148,9 @@ bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
 - Testing without running a daemon
 
 **swww/awww Transitions**:
+
+> NOTE: the following commands only work if the `swww-daemon` isn't already
+> running. If it is running, cycle with one-shot.
 
 ```bash
 # Use fade transitions
@@ -231,11 +235,7 @@ programs.ghostty = {
   enable = true;
   settings = {
     # The '?' makes the include optional/non-blocking
-    config-file = "?~/.config/randpaper/themes/ghostty.config";
-
-    # Your other persistent settings
-    font-family = "FiraCode Nerd Font";
-    theme = "dark"; # Base theme to fallback on
+    "config-file" = "?~/.config/randpaper/themes/ghostty.config";
   };
 };
 ```
@@ -317,6 +317,205 @@ window#waybar {
   color: @rp_bg;
 }
 ```
+
+<details>
+<summary> ✔️ Full `style.css` Example </summary>
+
+```css
+@import "/home/jr/.config/randpaper/themes/waybar.css";
+* {
+  border: none;
+  font-family: "JetBrainsMono Nerd Font", "Font Awesome 6 Free", sans-serif;
+  font-size: 14px;
+}
+
+window#waybar {
+  background-color: alpha(@rp_bg, 0.8);
+  color: @rp_fg;
+  transition-property: background-color;
+  transition-duration: 0.5s;
+  border-radius: 10px;
+}
+
+window#waybar.hidden {
+  opacity: 0.2;
+}
+
+#workspaces button {
+  padding: 0px;
+  margin: 4px 0 6px 0;
+  background-color: transparent;
+  color: #c8c0c0; /* Light gray */
+  min-width: 36px;
+}
+
+#workspaces button.active {
+  padding: 0 0 0 0;
+  margin: 4px 0 6px 0;
+  min-width: 36px;
+}
+
+#workspaces button:hover {
+  background: rgba(30, 34, 50, 0.5); /* Slightly lighter background */
+  border-radius: 15px;
+}
+
+#workspaces button.focused {
+  background-color: @rp_bg;
+  color: @rp_fg;
+}
+
+#workspaces button.urgent {
+  color: @rp_warn; /* Red urgent */
+}
+
+#clock,
+#battery,
+#cpu,
+#memory,
+#temperature,
+#backlight,
+#network,
+#pulseaudio,
+#custom-keyboard-layout,
+#custom-network_traffic,
+#custom-media,
+#tray,
+#idle_inhibitor,
+#custom-power,
+#custom-updates,
+#language {
+  padding: 0px 3px;
+  margin: 4px 3px 5px 3px;
+  color: @rp_fg; /* Light gray */
+  background-color: transparent;
+}
+
+#window,
+#workspaces {
+  border: solid 1px @rp_border; /* Darker border */
+  border-radius: 100px;
+}
+
+/* If workspaces is the leftmost module, omit left margin */
+.modules-left > widget:first-child > #workspaces {
+  margin-left: 0;
+}
+
+/* If workspaces is the rightmost module, omit right margin */
+.modules-right > widget:last-child > #workspaces {
+  margin-right: 0;
+}
+
+#clock {
+  color: @rp_accent; /* Orange clock */
+}
+
+#battery {
+  color: @rp_fg; /* Red battery */
+}
+
+@keyframes blink {
+  to {
+    background-color: @rp_bg; /* Light gray blink */
+    color: @rp_fg; /* Dark text blink */
+  }
+}
+
+#battery.critical:not(.charging) {
+  background-color: @rp_bg; /* Red critical battery */
+  color: @rp_warn;
+}
+
+label:focus {
+  background-color: #161824; /* Dark focus */
+}
+
+#cpu {
+  /* color: #2e3257;  Blue cpu */
+  color: @rp_fg;
+}
+
+#memory {
+  color: @rp_accent; /* Green memory */
+}
+
+#backlight {
+  color: @rp_ok; /* Light blue backlight */
+}
+
+#network {
+  color: @rp_fg; /* Light Blue network */
+}
+
+#network.disconnected {
+  color: @rp_warn;
+}
+
+#pulseaudio {
+  color: @rp_bg; /* Orange pulseaudio */
+}
+
+#pulseaudio.muted {
+  color: #5c5c5c; /* Darker gray muted */
+}
+
+#custom-power {
+  color: @rp_fg; /* Light blue power */
+}
+
+#custom-updates {
+  color: @rp_accent; /* Green updates */
+}
+
+#custom-media {
+  background-color: #9ece6a; /* Green media */
+  color: #161824; /* Dark text media */
+  min-width: 100px;
+}
+
+#custom-media.custom-spotify {
+  background-color: #9ece6a; /* Green spotify */
+}
+
+#custom-media.custom-vlc {
+  background-color: #ff9e64; /* Orange vlc */
+}
+
+#temperature {
+  color: #7aa2f7; /* Light blue temperature */
+}
+
+#temperature.critical {
+  background-color: #e82424; /* Red critical temp */
+}
+
+#tray {
+  border: solid 1px @rp_border; /* Light blue tray border */
+  border-radius: 30px;
+}
+
+#idle_inhibitor {
+  background-color: @rp_bg; /* Darker idle inhibitor */
+  border-radius: 15px;
+}
+
+#custom-keyboard-layout {
+  color: #dfc5a4; /* Red keyboard layout */
+}
+
+#custom-separator {
+  color: #5c5c5c; /* Darker separator */
+  margin: 0 1px;
+  padding-bottom: 5px;
+}
+
+#custom-network_traffic {
+  color: #ff9e64; /* Orange network traffic */
+}
+```
+
+</details>
 
 3. `randpaper` automatically reloads Waybar when it changes wallpapers, keeping
    your bar perfectly themed without manual intervention. (`SIGUSR2`
