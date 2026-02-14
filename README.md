@@ -2,7 +2,9 @@
 
 [![Nix](https://img.shields.io/badge/Nix-5277C3?style=flat&logo=nixos&logoColor=white)](https://nixos.org)
 
-![screenshot1](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/randpaper-demo.gif)
+<!-- ![screenshot1](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/randpaper-demo.gif) -->
+
+![screenshot1](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/randpaper-optimized.mp4)
 
 # randpaper - A high-performance wallpaper & theme daemon for Wayland
 
