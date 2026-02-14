@@ -4,7 +4,7 @@
 
 <!-- ![screenshot1](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/randpaper-demo.gif) -->
 
-![screenshot1](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/randpaper-optimized.mp4)
+![screenshot1](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/randpaper-demo.gif)
 
 # randpaper - A high-performance wallpaper & theme daemon for Wayland
 
