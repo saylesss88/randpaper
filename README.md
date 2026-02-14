@@ -36,7 +36,7 @@ synchronization—replacing complex script chains with a single, optimized binar
 
 ## 🛠 Installation
 
-**Prerequisits**
+**Prerequisites**
 
 You need `swaybg` or (`swww` / `awww`) installed as the renderer.
 
@@ -66,7 +66,9 @@ environment.systemPackages = {
 };
 ```
 
-And add an `exec` for either hyprland or sway:
+- Pass `inputs` through `specialArgs` in your `flake.nix`
+
+And add an `exec` for either hyprland or sway, only for `randpaper`:
 
 Hyprland Example:
 
@@ -75,10 +77,9 @@ wayland.windowManager.hyprland = {
   settings = {
     exec-once = [
   # Standard Usage
-  "swww-daemon" # `exec-once "swww-daemon"` only required if using `--renderer swww`
   "randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland --renderer swww"
-  # UWSM Usage
-  "uwsm app -- randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland"
+  # UWSM Usage w/ swaybg
+  "uwsm app -- randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland --renderer swaybg"
     ];
   };
 }
@@ -95,8 +96,9 @@ wayland.windowManager.sway = {
 };
 ```
 
-> Note: `randpaper` manages the renderer process for you. You do not need a
-> separate `exec-once = swaybg ...` line in your config.
+> Note: `randpaper` manages the renderer process for you. You do not need
+> separate `exec-once = swaybg ...` or `exec-once = swww ...` lines in your
+> config.
 
 </details>
 
@@ -106,19 +108,22 @@ wayland.windowManager.sway = {
 
 **Daemon Mode (Background Process)**
 
+With `swww` or `awww` installed you can test which mode you want from the
+command line before adding an `exec-once` for `randpaper` to your configuration:
+
 When you provide the `--time` flag, `randpaper` runs as a daemon and
 automatically cycles wallpapers at the specified interval:
 
 ```bash
-# Change every 30 minutes (default time if --time not specified with daemon)
-randpaper --time 30m ~/Pictures/wallpapers
-
 # Change every 5 minutes using Hyprland + swww transitions
 randpaper --time 5m --backend hyprland --renderer swww ~/Pictures/wallpapers
 
 # Change every hour with custom transitions
 randpaper --time 1h --renderer swww --transition-type fade ~/Pictures/wallpapers
 ```
+
+- These commands work without `swww-daemon` running because `randpaper`
+  automatically launches a `swww-daemon` process if one isn't already running.
 
 **One-Shot Mode (Pick Once & Exit)**
 
@@ -139,6 +144,9 @@ bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
 "$mod SHIFT,N,exec, randpaper --backend hyprland /home/jr/Pictures/wallpapers2"
 ```
 
+- `swaybg` can't be one-shot from the command line because it's not a
+  set-and-exit command; it's a long-running wallpaper service.
+
 **Use cases for one-shot mode**:
 
 - Manual wallpaper changes via keybinds
@@ -156,6 +164,10 @@ randpaper --renderer swww --transition-type fade --transition-step 90 --transiti
 # Use wipe transitions for hyprland
 randpaper --renderer swww --transition-type wipe --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers --backend hyprland
 ```
+
+- Again, the above commands only work if there isn't already a `swww-daemon`
+  instance running. Adding an `exec randpaper` to your config automatically adds
+  an `exec swww-daemon`
 
 - [Sample wallpaper repo](https://github.com/saylesss88/wallpapers2)
 
@@ -251,8 +263,8 @@ programs.ghostty = {
 <details>
 <summary> ✔️ Waybar Dynamic Theming </summary>
 
-To use `randpaper` with a `waybar` setup, ensure you call the daemon via `exec`
-in your Sway or Hyprland config.
+To use `randpaper` with a `waybar` setup, ensure you call the daemon via
+`exec waybar` in your Sway or Hyprland config.
 
 (Sway Example `~/.config/sway/config`):
 
@@ -315,204 +327,7 @@ window#waybar {
 }
 ```
 
-<details>
-<summary> ✔️ Full `style.css` Example </summary>
-
-```css
-@import "/home/jr/.config/randpaper/themes/waybar.css";
-* {
-  border: none;
-  font-family: "JetBrainsMono Nerd Font", "Font Awesome 6 Free", sans-serif;
-  font-size: 14px;
-}
-
-window#waybar {
-  background-color: alpha(@rp_bg, 0.8);
-  color: @rp_fg;
-  transition-property: background-color;
-  transition-duration: 0.5s;
-  border-radius: 10px;
-}
-
-window#waybar.hidden {
-  opacity: 0.2;
-}
-
-#workspaces button {
-  padding: 0px;
-  margin: 4px 0 6px 0;
-  background-color: transparent;
-  color: #c8c0c0; /* Light gray */
-  min-width: 36px;
-}
-
-#workspaces button.active {
-  padding: 0 0 0 0;
-  margin: 4px 0 6px 0;
-  min-width: 36px;
-}
-
-#workspaces button:hover {
-  background: rgba(30, 34, 50, 0.5); /* Slightly lighter background */
-  border-radius: 15px;
-}
-
-#workspaces button.focused {
-  background-color: @rp_bg;
-  color: @rp_fg;
-}
-
-#workspaces button.urgent {
-  color: @rp_warn; /* Red urgent */
-}
-
-#clock,
-#battery,
-#cpu,
-#memory,
-#temperature,
-#backlight,
-#network,
-#pulseaudio,
-#custom-keyboard-layout,
-#custom-network_traffic,
-#custom-media,
-#tray,
-#idle_inhibitor,
-#custom-power,
-#custom-updates,
-#language {
-  padding: 0px 3px;
-  margin: 4px 3px 5px 3px;
-  color: @rp_fg; /* Light gray */
-  background-color: transparent;
-}
-
-#window,
-#workspaces {
-  border: solid 1px @rp_border; /* Darker border */
-  border-radius: 100px;
-}
-
-/* If workspaces is the leftmost module, omit left margin */
-.modules-left > widget:first-child > #workspaces {
-  margin-left: 0;
-}
-
-/* If workspaces is the rightmost module, omit right margin */
-.modules-right > widget:last-child > #workspaces {
-  margin-right: 0;
-}
-
-#clock {
-  color: @rp_accent; /* Orange clock */
-}
-
-#battery {
-  color: @rp_fg; /* Red battery */
-}
-
-@keyframes blink {
-  to {
-    background-color: @rp_bg; /* Light gray blink */
-    color: @rp_fg; /* Dark text blink */
-  }
-}
-
-#battery.critical:not(.charging) {
-  background-color: @rp_bg; /* Red critical battery */
-  color: @rp_warn;
-}
-
-label:focus {
-  background-color: #161824; /* Dark focus */
-}
-
-#cpu {
-  /* color: #2e3257;  Blue cpu */
-  color: @rp_fg;
-}
-
-#memory {
-  color: @rp_accent; /* Green memory */
-}
-
-#backlight {
-  color: @rp_ok; /* Light blue backlight */
-}
-
-#network {
-  color: @rp_fg; /* Light Blue network */
-}
-
-#network.disconnected {
-  color: @rp_warn;
-}
-
-#pulseaudio {
-  color: @rp_bg; /* Orange pulseaudio */
-}
-
-#pulseaudio.muted {
-  color: #5c5c5c; /* Darker gray muted */
-}
-
-#custom-power {
-  color: @rp_fg; /* Light blue power */
-}
-
-#custom-updates {
-  color: @rp_accent; /* Green updates */
-}
-
-#custom-media {
-  background-color: #9ece6a; /* Green media */
-  color: #161824; /* Dark text media */
-  min-width: 100px;
-}
-
-#custom-media.custom-spotify {
-  background-color: #9ece6a; /* Green spotify */
-}
-
-#custom-media.custom-vlc {
-  background-color: #ff9e64; /* Orange vlc */
-}
-
-#temperature {
-  color: #7aa2f7; /* Light blue temperature */
-}
-
-#temperature.critical {
-  background-color: #e82424; /* Red critical temp */
-}
-
-#tray {
-  border: solid 1px @rp_border; /* Light blue tray border */
-  border-radius: 30px;
-}
-
-#idle_inhibitor {
-  background-color: @rp_bg; /* Darker idle inhibitor */
-  border-radius: 15px;
-}
-
-#custom-keyboard-layout {
-  color: #dfc5a4; /* Red keyboard layout */
-}
-
-#custom-separator {
-  color: #5c5c5c; /* Darker separator */
-  margin: 0 1px;
-  padding-bottom: 5px;
-}
-
-#custom-network_traffic {
-  color: #ff9e64; /* Orange network traffic */
-}
-```
-
-</details>
+- [Full `style.css` Example](https://github.com/saylesss88/.dotfiles/blob/main/waybar/.config/waybar/style.css)
 
 3. `randpaper` automatically reloads Waybar when it changes wallpapers, keeping
    your bar perfectly themed without manual intervention. (`SIGUSR2`
@@ -526,8 +341,8 @@ CSS variables the more noticeable it will be.
 
 - [NixOS Waybar Example](https://github.com/saylesss88/flake/blob/main/home/hypr/waybar.nix)
 
-- With Hyprland on NixOS, after cycling with one-shot run `pkill -USR2 waybar`
-  to apply the new theme.
+- On NixOS, after cycling with one-shot run `pkill -USR2 waybar` to apply the
+  new theme.
 
 </details>
 
@@ -538,7 +353,7 @@ CSS variables the more noticeable it will be.
 ### Manual Wallpaper Change (Recommended)
 
 The simplest way to instantly change wallpapers is to run one-shot mode while
-your daemon is running:
+the randpaper daemon is running:
 
 **Hyprland Config**:
 
@@ -557,7 +372,7 @@ Your background daemon continues running for automatic cycles.
 
 ---
 
-### Signal Running Daemon (Alternative for Sway)
+### Signal Running Daemon (Alternative for Standare Filesystem Hierarchy layouts)
 
 You can also force the daemon to cycle immediately without spawning a separate
 process:
@@ -566,6 +381,12 @@ process:
 
 ```text
 bindsym $mod+n exec pkill -USR1 randpaper
+```
+
+**Hyprland Config**:
+
+```text
+bind = $mainMod SHIFT, N, exec, pkill -USR1 randpaper
 ```
 
 **Shell**:
@@ -577,9 +398,7 @@ pkill -USR1 randpaper
 Now when you run the above keybind, you will get a new wallpaper, terminal
 theme, and waybar theme.
 
-- This may also work with Hyprland on a standard filesystem hierarchy OS, I
-  haven't been able to test yet. For NixOS, use the one-shot to cycle wallpapers
-  & themes.
+> NOTE: Expect different behavior on NixOS.
 
 ---
 
