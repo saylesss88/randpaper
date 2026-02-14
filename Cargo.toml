@@ -1,6 +1,6 @@
 [package]
 name = "randpaper"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 description = "A customizable wallpaper daemon for per-monitor cycling, one-shot application, and optional theme synchronization for Waybar and terminals."
 readme = "README.md"
