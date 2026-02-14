@@ -50,6 +50,8 @@ async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
             // Daemon not running, start it
             log::info!("Starting {daemon_name}...");
             Command::new(&daemon_name)
+                .stdout(std::process::Stdio::null()) // Silences stdout
+                .stderr(std::process::Stdio::null()) // Silences stderr
                 .spawn()
                 .with_context(|| format!("failed to spawn {daemon_name}"))?;
 
