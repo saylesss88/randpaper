@@ -2,6 +2,8 @@
 
 [![Nix](https://img.shields.io/badge/Nix-5277C3?style=flat&logo=nixos&logoColor=white)](https://nixos.org)
 
+![screenshot1](https://raw.githubusercontent.com/saylesss88/rmatrix-snowfall/main/randpaper-demo2.mp4)
+
 # randpaper - A high-performance wallpaper & theme daemon for Wayland
 
 `randpaper` is a lightweight Rust utility designed for efficiency. It manages
