@@ -45,6 +45,7 @@ pub enum RendererType {
     /// Uses 'swaybg' (Supports multiple monitors, no transitions)
     Swaybg,
     /// Uses 'swww' (Supports transitions, Hyprland specific)
+    #[clap(alias = "awww")]
     Swww,
     // Possibly add Hyprpaper in the future
 }
