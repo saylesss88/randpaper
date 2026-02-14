@@ -4,7 +4,6 @@ use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
 use anyhow::Context;
 use std::path::PathBuf;
-// use std::process::Stdio;
 use std::time::Duration;
 use tokio::process::{Child, Command};
 use tokio::signal::unix::{SignalKind, signal};
@@ -23,27 +22,6 @@ pub async fn detect_swww_binary() -> String {
     log::warn!("Neither 'swww' nor 'awww' found. Defaulting to 'swww'.");
     "swww".to_string()
 }
-
-// async fn check_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
-//     let daemon_name = format!("{swww_bin}-daemon");
-
-//     // Try to query swww to verify daemon is running
-//     let query_result = Command::new(swww_bin)
-//         .arg("query")
-//         .output()
-//         .await;
-
-//     if let Ok(output) = query_result {
-//         if output.status.success() {
-//             return Ok(());
-//         }
-//     }
-
-//     anyhow::bail!(
-//         "{daemon_name} is not running. Please start it first:\n  \
-//         Add 'exec-once = {daemon_name}' to your Hyprland config, or run '{daemon_name}' manually."
-//     )
-// }
 
 async fn swww_ready(swww_bin: &str) -> bool {
     (Command::new(swww_bin).arg("query").status().await).is_ok_and(|st| st.success())
@@ -82,30 +60,6 @@ async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
 
     Ok(())
 }
-
-// async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
-//     // Fast path: daemon already answering on the expected socket.
-//     if swww_ready(swww_bin).await {
-//         return Ok(());
-//     }
-
-//     // Silence output to avoid spurious “already running” noise in racey situations.
-//     let _child = Command::new("swww-daemon")
-//         .stdout(Stdio::null())
-//         .stderr(Stdio::null())
-//         .spawn()
-//         .context("failed to spawn swww-daemon")?;
-
-//     // Wait briefly for the socket to become ready.
-//     for _ in 0..40 {
-//         if swww_ready(swww_bin).await {
-//             return Ok(());
-//         }
-//         sleep(Duration::from_millis(25)).await;
-//     }
-
-//     bail!("swww-daemon did not become ready; check XDG_RUNTIME_DIR and WAYLAND_DISPLAY")
-// }
 
 fn build_swaybg_args<F, M>(monitors: &[String], pick_random: F, mode: M) -> Vec<String>
 where
