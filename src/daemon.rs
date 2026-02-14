@@ -2,8 +2,9 @@ use crate::cli::{Cli, RendererType};
 use crate::theme::update_theme_file;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
-use anyhow::Context;
+use anyhow::{Context, bail};
 use std::path::PathBuf;
+use std::process::Stdio;
 use std::time::Duration;
 use tokio::process::{Child, Command};
 use tokio::signal::unix::{SignalKind, signal};
@@ -23,34 +24,84 @@ pub async fn detect_swww_binary() -> String {
     "swww".to_string()
 }
 
+// async fn check_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
+//     let daemon_name = format!("{swww_bin}-daemon");
+
+//     // Try to query swww to verify daemon is running
+//     let query_result = Command::new(swww_bin)
+//         .arg("query")
+//         .output()
+//         .await;
+
+//     if let Ok(output) = query_result {
+//         if output.status.success() {
+//             return Ok(());
+//         }
+//     }
+
+//     anyhow::bail!(
+//         "{daemon_name} is not running. Please start it first:\n  \
+//         Add 'exec-once = {daemon_name}' to your Hyprland config, or run '{daemon_name}' manually."
+//     )
+// }
+
+// async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
+//     let daemon_name = format!("{swww_bin}-daemon");
+
+//     // Check if daemon is already running using pgrep
+//     let status = Command::new("pgrep")
+//         .arg("-x") // Exact match
+//         .arg(&daemon_name)
+//         .status()
+//         .await;
+
+//     match status {
+//         Ok(exit_status) if exit_status.success() => {
+//             // Daemon is already running, do nothing
+//             log::info!("{daemon_name} is already running");
+//         }
+//         _ => {
+//             // Daemon not running, start it
+//             log::info!("Starting {daemon_name}...");
+//             Command::new(&daemon_name)
+//                 .spawn()
+//                 .with_context(|| format!("failed to spawn {daemon_name}"))?;
+
+//             // Give it time to initialize
+//             sleep(Duration::from_millis(500)).await;
+//         }
+//     }
+
+//     Ok(())
+// }
+
+async fn swww_ready(swww_bin: &str) -> bool {
+    (Command::new(swww_bin).arg("query").status().await).is_ok_and(|st| st.success())
+}
+
 async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
-    let daemon_name = format!("{swww_bin}-daemon");
-
-    // Check if daemon is already running using pgrep
-    let status = Command::new("pgrep")
-        .arg("-x") // Exact match
-        .arg(&daemon_name)
-        .status()
-        .await;
-
-    match status {
-        Ok(exit_status) if exit_status.success() => {
-            // Daemon is already running, do nothing
-            log::info!("{daemon_name} is already running");
-        }
-        _ => {
-            // Daemon not running, start it
-            log::info!("Starting {daemon_name}...");
-            Command::new(&daemon_name)
-                .spawn()
-                .with_context(|| format!("failed to spawn {daemon_name}"))?;
-
-            // Give it time to initialize
-            sleep(Duration::from_millis(500)).await;
-        }
+    // Fast path: daemon already answering on the expected socket.
+    if swww_ready(swww_bin).await {
+        return Ok(());
     }
 
-    Ok(())
+    // Start daemon (don't rely on "{swww_bin}-daemon"; daemon is "swww-daemon").
+    // Silence output to avoid spurious “already running” noise in racey situations.
+    let _child = Command::new("swww-daemon")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .context("failed to spawn swww-daemon")?;
+
+    // Wait briefly for the socket to become ready.
+    for _ in 0..40 {
+        if swww_ready(swww_bin).await {
+            return Ok(());
+        }
+        sleep(Duration::from_millis(25)).await;
+    }
+
+    bail!("swww-daemon did not become ready; check XDG_RUNTIME_DIR and WAYLAND_DISPLAY")
 }
 
 fn build_swaybg_args<F, M>(monitors: &[String], pick_random: F, mode: M) -> Vec<String>
@@ -98,6 +149,7 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
 
     if cli.renderer == RendererType::Swww {
         ensure_swww_daemon(&swww_bin).await?;
+        // check_swww_daemon(&swww_bin).await?;
     }
 
     let mut sig_usr1 = signal(SignalKind::user_defined1())?;
