@@ -10,6 +10,9 @@ homepage = "https://github.com/saylesss88/randpaper"
 keywords = ["rust", "wallpaper"]
 categories = ["command-line-utilities", "multimedia"]
 exclude = [
+	"assets/*",
+	"*.mp4",
+	"*.gif",
 	".github",
 	".gitignore",
 	"flake",
