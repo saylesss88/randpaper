@@ -222,7 +222,16 @@ include=~/.config/randpaper/themes/foot.ini
 File: `~/.config/kitty/kitty.conf`
 
 ```text
+allow_remote_control yes
+listen_on unix:/tmp/mykitty
 include ~/.config/randpaper/themes/kitty.conf
+```
+
+Add a keybind to your Sway or Hyprland config to start kitty with remote control
+enabled (Sway example):
+
+```conf
+$mod+Shift+t exec kitty -o allow_remote_control=yes --listen-on unix:/tmp/mykitty
 ```
 
 **Live-Reload of Terminal Themes**
@@ -233,9 +242,12 @@ include ~/.config/randpaper/themes/kitty.conf
   `exec randpaper ~/Pictures/wallpapers`)(Tested on Fedora with Sway, expect
   different behavior on NixOS)
 
-- **Foot / Kitty**: the theme file is updated, but existing windows may not
-  live-reload reliably; close and reopen the terminal to pick up the new theme.
-  (Work in Progress)
+- **Kitty**: live reloads work with the one-shot keybind if you follow the steps
+  above.
+
+- **Foot**: the theme file is updated, but existing windows may not live-reload
+  reliably; close and reopen the terminal to pick up the new theme. (Work in
+  Progress)
 
 <details>
 <summary> ✔️**GhosTTY on NixOS dynamic theming** </summary>
