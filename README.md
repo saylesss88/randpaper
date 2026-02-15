@@ -250,7 +250,9 @@ $mod+Shift+t exec kitty -o allow_remote_control=yes --listen-on unix:/tmp/mykitt
   Progress)
 
 <details>
-<summary> ✔️**GhosTTY on NixOS dynamic theming** </summary>
+<summary> ✔️GhosTTY/Kitty on NixOS dynamic theming </summary>
+
+**GhosTTY**
 
 ```nix
 # home.nix or ghostty.nix
@@ -267,6 +269,29 @@ programs.ghostty = {
 
 - Run the cycle command then type `pkill -USR2 ghostty` to apply the theme
   instantly.
+
+**Kitty**
+
+```nix
+programs.kitty = {
+  extraConfig = ''
+    allow_remote_control yes
+    listen_on unix:/tmp/mykitty
+    include ~/.config/randpaper/themes/kitty.conf
+  '';
+};
+```
+
+Add this keybind:
+
+```nix
+"$mod,T,exec,kitty -o allow_remote_control=yes --listen-on unix:/tmp/mykitty"
+# One-Shot for Hyprland
+"$mod SHIFT,N,exec, randpaper --backend hyprland /home/Your-User/Pictures/wallpapers"
+```
+
+Now running the above one-shot command will dynamically reload the kitty theme
+and apply it automatically.
 
 </details>
 
