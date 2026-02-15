@@ -228,19 +228,15 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     thread::sleep(Duration::from_millis(100));
 
     // Reload or start Waybar
-    // let _ = reload_or_start_waybar();
     () = reload_waybar_only();
 
     // Best-effort reload terminals (don't auto-start if not running)
-    // let _ = Command::new("pkill").args(["-USR2", "-x", "foot"]).status();
     let foot_result = Command::new("sh")
         .args(["-c", "pkill -USR1 foot; sleep 0.05; pkill -USR1 foot"])
         .status();
     log::info!("Foot reload result: {foot_result:?}");
 
     // Reload Kitty (explicit socket if needed)
-    // let _ = Command::new("kitten").args(["@", "set-colors"]).status();
-
     let kitty_conf = theme_dir.join("kitty.conf");
     let kitty_result = Command::new("kitten")
         .args([
