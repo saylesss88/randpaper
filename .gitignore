@@ -1,1 +1,11 @@
+# Standard Rust build artifacts
 /target
+
+# Local configuration/testing
+**/*.rs.bk
+.env
+themes/local_test.css
+
+# OS generated files
+.DS_Store
+Thumbs.db
