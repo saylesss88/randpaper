@@ -1,4 +1,5 @@
 use crate::wallpaper::WallpaperCache;
+use anyhow::Context;
 use std::path::PathBuf;
 use tokio::process::{Child, Command};
 
@@ -59,13 +60,13 @@ pub async fn apply(
         let _ = child.wait().await;
     }
 
-    if let Ok(child) = Command::new("swaybg")
+    let child = Command::new("swaybg")
         .args(&args)
         .kill_on_drop(true)
         .spawn()
-    {
-        *current = Some(child);
-    }
+        .with_context(|| "failed to spawn 'swaybg' process. Is it installed and in your PATH?")?;
+
+    *current = Some(child);
 
     Ok(())
 }
