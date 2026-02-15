@@ -63,21 +63,28 @@ fn pick_roles(colors: &[Rgb]) -> (Rgb, Rgb, Rgb, Rgb, Rgb) {
     (bg, fg, accent, warn, ok)
 }
 
-/// Helper to write files atomically (write to temp -> rename).
-/// This prevents Waybar/terminals from reading empty files during the write.
+/// Performs an atomic write by writing to a temporary file and then renaming it.
+/// This prevents partial writes if the power cuts or the process crashes.
 fn atomic_write(path: &Path, contents: &str) -> anyhow::Result<()> {
     let dir = path.parent().context("path has no parent")?;
     fs::create_dir_all(dir)?;
 
-    // Create a unique temp file in the same directory
-    let tmp_path = dir.join(format!(
-        ".{}.tmp.{}",
-        path.file_name().unwrap().to_string_lossy(),
-        std::process::id()
-    ));
+    let file_name = path
+        .file_name()
+        .context("path has no filename")?
+        .to_string_lossy();
 
-    fs::write(&tmp_path, contents)?;
-    fs::rename(&tmp_path, path)?; // Atomic rename
+    // Use .display() if you ever print the path,
+    // but for building the filename, string lossy is perfect.
+    let tmp_name = format!(".{}.tmp.{}", file_name, std::process::id());
+    let tmp_path = dir.join(tmp_name);
+
+    fs::write(&tmp_path, contents)
+        .with_context(|| format!("failed to write temp file: {}", tmp_path.display()))?;
+
+    fs::rename(&tmp_path, path)
+        .with_context(|| format!("failed to commit atomic write to {}", path.display()))?;
+
     Ok(())
 }
 
