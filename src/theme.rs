@@ -234,12 +234,28 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     // Best-effort reload terminals (don't auto-start if not running)
     // let _ = Command::new("pkill").args(["-USR2", "-x", "foot"]).status();
     let foot_result = Command::new("sh")
-        .args(["-c", "pkill -USR2 foot; sleep 0.05; pkill -USR2 foot"])
+        .args(["-c", "pkill -USR1 foot; sleep 0.05; pkill -USR1 foot"])
         .status();
     log::info!("Foot reload result: {foot_result:?}");
 
     // Reload Kitty (explicit socket if needed)
-    let _ = Command::new("kitten").args(["@", "set-colors"]).status();
+    // let _ = Command::new("kitten").args(["@", "set-colors"]).status();
+
+    let kitty_conf = theme_dir.join("kitty.conf");
+    let kitty_result = Command::new("kitten")
+        .args([
+            "@",
+            "--to",
+            "unix:/tmp/mykitty",
+            "set-colors",
+            "--all",
+            "--configured",
+            kitty_conf
+                .to_str()
+                .ok_or_else(|| anyhow::anyhow!("non-utf8 path"))?,
+        ])
+        .status();
+    log::info!("Kitty set-colors result: {kitty_result:?}");
 
     let _ = Command::new("pkill")
         .args(["-USR2", "-x", "ghostty"])
