@@ -5,6 +5,10 @@ use std::time::Duration;
 use tokio::process::Command;
 use tokio::time::sleep;
 
+/// Attempts to find a compatible binary for `swww`.
+///
+/// Checks for `swww` first, then `awww` (a common wrapper/alternative).
+/// Defaults to "swww" if neither are found.
 pub async fn detect_swww_binary() -> String {
     if Command::new("swww").arg("--help").output().await.is_ok() {
         return "swww".to_string();
@@ -16,10 +20,15 @@ pub async fn detect_swww_binary() -> String {
     "swww".to_string()
 }
 
+/// Checks if the `swww-daemon` is currently intitialized and responding to queries.
 async fn swww_ready(swww_bin: &str) -> bool {
     (Command::new(swww_bin).arg("query").status().await).is_ok_and(|st| st.success())
 }
 
+/// Ensures the `swww-daemon` is running.
+///
+/// If the daemon is not responsive, it checks for an existing process via `pgrep`.
+/// If no process is found, it spawns a new daemon and waits briefly for it to initialize.
 pub async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
     if swww_ready(swww_bin).await {
         return Ok(());
@@ -49,6 +58,13 @@ pub async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Sends commands to the `swww` daemon to update wallpapers with transitions.
+///
+/// This loops through each monitor and calls the `img` command.
+/// It uses transition settings (type, step, fps) provided in the `Cli` config.
+///
+/// # Errors
+/// Returns an error if the binary cannot be executed or if `swww` returns a non-zero exit code.
 pub async fn apply(
     cli: &Cli,
     cache: &WallpaperCache,

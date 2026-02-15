@@ -2,6 +2,14 @@ use crate::wallpaper::WallpaperCache;
 use std::path::PathBuf;
 use tokio::process::{Child, Command};
 
+/// Constructs the command-line arguments for `swaybg`.
+///
+/// It maps each monitor to a randomly selected wallpaper from the cache.
+///
+/// # Arguments
+/// * `monitors` - Slice of monitor names to apply wallpapers to.
+/// * `pick_random` - Closure that returns a path to a random image.
+/// * `mode` - Closure that returns the scaling mode (e.g., "fill").
 fn build_swaybg_args<F, M>(monitors: &[String], pick_random: F, mode: M) -> Vec<String>
 where
     F: Fn() -> PathBuf,
@@ -24,6 +32,14 @@ where
     args
 }
 
+/// Applies wallpapers using `swaybg`.
+///
+/// Since `swaybg` does not have a daemon, this function:
+/// 1. Kills the previously running `swaybg` process (if any).
+/// 2. Spawns a new `swaybg` process as a long-running child.
+///
+/// # Errors
+/// Returns an error if the command fails to spawn.
 pub async fn apply(
     cache: &WallpaperCache,
     monitors: &[String],
@@ -36,6 +52,8 @@ pub async fn apply(
         return Ok(());
     }
 
+    // Terminate the existing swaybg process before starting a new one
+    // to prevent multiple instances from overlapping or wasting resources.
     if let Some(mut child) = current.take() {
         let _ = child.kill().await;
         let _ = child.wait().await;
