@@ -239,7 +239,7 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     log::info!("Foot reload result: {foot_result:?}");
 
     // Reload Kitty (explicit socket if needed)
-    let _ = Command::new("kitten").args(["@", "load-config"]).status();
+    let _ = Command::new("kitten").args(["@", "set-colors"]).status();
 
     let _ = Command::new("pkill")
         .args(["-USR2", "-x", "ghostty"])
