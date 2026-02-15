@@ -5,6 +5,7 @@ use std::process::Command;
 use std::time::Duration;
 use std::{fs, thread};
 
+/// Represents a color in the Red-Green-Blue color space.
 #[derive(Clone, Copy, Debug)]
 struct Rgb {
     r: u8,
@@ -13,14 +14,19 @@ struct Rgb {
 }
 
 impl Rgb {
+    /// Returns the color as a CSS-style hex string (e.g., "#ffffff").
     fn hex(self) -> String {
         format!("#{:02x}{:02x}{:02x}", self.r, self.g, self.b)
     }
 
+    /// Calculates the relative luminance of the color.
+    /// Used to determine how "bright" a color appears to the human eye.
     fn luminance(self) -> f32 {
         0.2126f32.mul_add(f32::from(self.r), 0.7152 * f32::from(self.g))
     }
 
+    /// A simple heuristic for color saturation by calculating the
+    /// distance between the most and least dominant channels.
     fn saturation_proxy(self) -> u8 {
         let max = self.r.max(self.g).max(self.b);
         let min = self.r.min(self.g).min(self.b);
@@ -28,9 +34,14 @@ impl Rgb {
     }
 }
 
+/// Assigns specific UI roles (background, foreground, accent, etc.)
+/// to colors based on their luminance and saturation.
 fn pick_roles(colors: &[Rgb]) -> (Rgb, Rgb, Rgb, Rgb, Rgb) {
     let mut sorted = colors.to_vec();
+    // Sort by brightness (darkest to lightest)
     sorted.sort_by(|a, b| a.luminance().total_cmp(&b.luminance()));
+
+    // Background is the darkest, Foreground is the lightest
     let bg = sorted[0];
     let fg = *sorted.last().unwrap_or(&Rgb {
         r: 225,
@@ -38,12 +49,14 @@ fn pick_roles(colors: &[Rgb]) -> (Rgb, Rgb, Rgb, Rgb, Rgb) {
         b: 225,
     });
 
+    // Accent is the most "vibrant" color in the pallete
     let accent = sorted
         .iter()
         .copied()
         .max_by_key(|c| c.saturation_proxy())
         .unwrap_or(fg);
 
+    // Naive selection for status colors based on position in the sorted list
     let warn = sorted.get(2).copied().unwrap_or(accent);
     let ok = sorted.get(4).copied().unwrap_or(accent);
 
@@ -68,41 +81,15 @@ fn atomic_write(path: &Path, contents: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Helper to reload waybar
+/// Sends a SIGUSR2 signal to all running Waybar instances to trigger a CSS reload.
 fn reload_waybar_only() {
     let _ = Command::new("pkill")
         .args(["-USR2", "-x", "waybar"])
         .status();
 }
 
-// fn reload_or_start_waybar() -> anyhow::Result<()> {
-//     // 1) Reload if running (Waybar supports SIGUSR2 reload)
-//     let reloaded = Command::new("pkill")
-//         .args(["-USR2", "-x", "waybar"])
-//         .status()
-//         .map(|s| s.success())
-//         .unwrap_or(false);
-
-//     if reloaded {
-//         log::info!("Reloaded waybar (SIGUSR2)");
-//         return Ok(());
-//     }
-
-//     // 2) Not running (or pkill missing/failed). Start ONLY if not already running.
-//     // This avoids duplicates even if the previous check failed for some reason.
-//     let status = Command::new("sh")
-//         .args(["-c", "pgrep -x waybar >/dev/null || (waybar & disown)"])
-//         .status()
-//         .context("failed to run waybar start guard")?;
-
-//     if status.success() {
-//         log::info!("Ensured waybar is running");
-//         Ok(())
-//     } else {
-//         anyhow::bail!("Failed to ensure waybar is running (guard command failed)");
-//     }
-// }
-
+/// Generates a CSS file for Waybar containing @define-color variables
+/// based on the extracted palette.
 pub fn write_waybar_css(
     theme_dir: &Path,
     palette: &[color_thief::Color],
@@ -133,7 +120,7 @@ pub fn write_waybar_css(
     Ok(out)
 }
 
-/// Ensures the Waybar theme file exists with a default palette.
+/// Ensures the Waybar theme file exists with a default Catppuccin-style palette.
 /// Call this once at startup to prevent Waybar from crashing on @import.
 pub fn ensure_theme_exists() -> anyhow::Result<()> {
     let theme_dir = dirs::config_dir()
@@ -166,13 +153,19 @@ pub fn ensure_theme_exists() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// The primary entry point for updating system themes.
+/// 1. Extracts a color palette from the provided image.
+/// 2. Generates configuration files for Waybar, Ghostty, Kitty, and Foot.
+/// 3. Triggers a live reload for all supported applications.
 pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     log::info!("updating theme for image: {}", image_path.display());
 
+    // Load and downsample image for faster color extraction
     let img = image::open(image_path).context("Failed to open image for theming")?;
     let img = img.resize(300, 300, image::imageops::FilterType::Nearest);
     let buffer = img.to_rgb8();
 
+    // Extract dominant colors
     let palette = color_thief::get_palette(buffer.as_raw(), color_thief::ColorFormat::Rgb, 10, 16)
         .map_err(|e| anyhow::anyhow!("Color thief error: {e:?}"))?;
 
@@ -218,6 +211,7 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     let _ = writeln!(foot, "background={:02x}{:02x}{:02x}", bg.r, bg.g, bg.b);
     let _ = writeln!(foot, "foreground={:02x}{:02x}{:02x}", fg.r, fg.g, fg.b);
 
+    // 3. Persist terminal configs
     atomic_write(&theme_dir.join("ghostty.config"), &ghostty)?;
     atomic_write(&theme_dir.join("kitty.conf"), &kitty)?;
     atomic_write(&theme_dir.join("foot.ini"), &foot)?;
@@ -227,16 +221,16 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     // Small delay to ensure filesystem has flushed the writes
     thread::sleep(Duration::from_millis(100));
 
-    // Reload or start Waybar
+    // 4. Reload Waybar
     () = reload_waybar_only();
 
-    // Best-effort reload terminals (don't auto-start if not running)
+    // 5. Best-effort to reload foot
     let foot_result = Command::new("sh")
         .args(["-c", "pkill -USR1 foot; sleep 0.05; pkill -USR1 foot"])
         .status();
     log::info!("Foot reload result: {foot_result:?}");
 
-    // Reload Kitty (explicit socket if needed)
+    // 6. Reload Kitty (Requires remote control / unix socket enabled)
     let kitty_conf = theme_dir.join("kitty.conf");
     let kitty_result = Command::new("kitten")
         .args([
@@ -253,6 +247,7 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
         .status();
     log::info!("Kitty set-colors result: {kitty_result:?}");
 
+    // 7. Reload Ghostty (SIGUSR2 triggers config reload)
     let _ = Command::new("pkill")
         .args(["-USR2", "-x", "ghostty"])
         .status();
