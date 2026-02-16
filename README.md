@@ -106,6 +106,92 @@ wayland.windowManager.sway = {
 
 ---
 
+## 📚️ Configuration
+
+`randpaper` supports an optional TOML configuration file. By default, it looks
+for `config.toml` in your XDG config directory:
+
+```bash
+~/.config/randpaper/config.toml
+```
+
+You can also specify a custom config file path at runtime:
+
+```bash
+randpaper --config ./my-config.toml
+```
+
+Example `config.toml`:
+
+```toml
+# Path to your wallpaper directory (defaults to current directory if omitted)
+wallpaper_dir = "/home/user/Pictures/Wallpapers"
+
+# Backend to use for monitor detection
+# Values: "sway", "hyprland"
+backend = "sway"
+
+# Tool used to set the wallpaper
+# Values: "swaybg" (static), "swww" (animated transitions)
+renderer = "swww"
+
+# Update interval (if running as a daemon)
+# Examples: "30m", "1h", "45s"
+time = "10m"
+
+# Transition settings (only used with swww renderer)
+transition_type = "simple"
+transition_step = 90
+transition_fps = 60
+
+# Optional: Force wallpaper only on specific outputs
+# outputs = ["DP-1", "HDMI-A-1"]
+```
+
+**Precedence**
+
+Command-line arguments **always override** the configuration file.
+
+For example, if your config file sets `renderer = "swww"`, you can temporarily
+force `swaybg` for a single run without editing the file:
+
+```bash
+randpaper --renderer swaybg
+```
+
+Instead of a long command in your Sway or Hyprland config like this:
+
+```bash
+# Old way in ~/.config/sway/config
+exec randpaper --time 10m --renderer swww --backend sway --wallpaper-dir ~/Pictures/Wallpapers
+```
+
+You can move all those settings into `~/.config/randpaper/config.toml`:
+
+```toml
+# ~/.config/randpaper/config.toml
+time = "10m"
+renderer = "swww"
+backend = "sway"
+wallpaper_dir = "/home/user/Pictures/Wallpapers"
+```
+
+And then your Sway config becomes much cleaner:
+
+```bash
+# New way
+exec randpaper
+```
+
+And change your one-shot command to match:
+
+```conf
+# Sway
+$mod+Shift+n exec randpaper
+```
+
+---
+
 ## 🧾 Usage
 
 **Daemon Mode (Background Process)**
