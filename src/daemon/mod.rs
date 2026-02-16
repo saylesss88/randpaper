@@ -1,4 +1,4 @@
-use crate::cli::Cli;
+use crate::cli::Config;
 use crate::theme::update_theme_file;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
@@ -18,19 +18,19 @@ pub use render::swww::detect_swww_binary;
 /// 1. Initializes the wallpaper cache and determines the rotation frequency.
 /// 2. Sets up a listener for `SIGUSR1` to allow manual skips.
 /// 3. Enters an infinite loop that updates themes and wallpapers based on the timer.
-pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
+pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<()> {
     // Ensure the fallback theme is present before the first rotation
     crate::theme::ensure_theme_exists()?;
 
-    let cache = WallpaperCache::new(&cli.wallpaper_dir)?;
+    let cache = WallpaperCache::new(&config.wallpaper_dir)?;
 
     // Parse the human-readable duration (e.g., "30m", "1h") into a Duration object
     let period: Duration =
-        parse_duration::parse(cli.time.as_ref().expect("daemon mode requires --time"))
+        parse_duration::parse(config.time.as_ref().expect("daemon mode requires --time"))
             .map_err(|e| anyhow::anyhow!("invalid duration: {e}"))?;
 
     // Initialize the chosen rendering engine (swaybg or swww)
-    let mut renderer = render::Renderer::new(&cli).await?;
+    let mut renderer = render::Renderer::new(&config).await?;
 
     // if cli.renderer == RendererType::Swww {
     // optional: log renderer init already ensured daemon
@@ -56,7 +56,7 @@ pub async fn run_loop<B: Backend>(cli: Cli, backend: B) -> anyhow::Result<()> {
         let _ = update_theme_file(img);
 
         // Dispatch the wallpaper update to the specific renderer
-        renderer.apply(&cli, &cache, &monitors).await?;
+        renderer.apply(&config, &cache, &monitors).await?;
 
         // The core wait logic:
         // Either wait for the full 'period' duration, OR

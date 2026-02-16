@@ -1,4 +1,4 @@
-use crate::cli::{Cli, RendererType};
+use crate::cli::{Config, RendererType};
 use crate::wallpaper::WallpaperCache;
 use tokio::process::Child;
 
@@ -27,8 +27,8 @@ impl Renderer {
     /// # Errors
     ///
     /// Returns an error if the renderer initialization (e.g., starting the daemon) fails.
-    pub async fn new(cli: &Cli) -> anyhow::Result<Self> {
-        let swww_bin = match cli.renderer {
+    pub async fn new(config: &Config) -> anyhow::Result<Self> {
+        let swww_bin = match config.renderer {
             RendererType::Swww => {
                 let bin = swww::detect_swww_binary().await;
                 swww::ensure_swww_daemon(&bin).await?;
@@ -58,15 +58,15 @@ impl Renderer {
     /// Panics if the renderer is set to `Swww` but the binary path was never initialized.
     pub async fn apply(
         &mut self,
-        cli: &Cli,
+        config: &Config,
         cache: &WallpaperCache,
         monitors: &[String],
     ) -> anyhow::Result<()> {
-        match cli.renderer {
+        match config.renderer {
             RendererType::Swaybg => swaybg::apply(cache, monitors, &mut self.swaybg_child).await,
             RendererType::Swww => {
                 let bin = self.swww_bin.as_deref().expect("Renderer::new sets this");
-                swww::apply(cli, cache, monitors, bin).await
+                swww::apply(config, cache, monitors, bin).await
             }
         }
     }

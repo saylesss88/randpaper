@@ -1,4 +1,4 @@
-use crate::cli::Cli;
+use crate::cli::Config;
 use crate::wallpaper::WallpaperCache;
 use anyhow::Context;
 use std::time::Duration;
@@ -66,13 +66,13 @@ pub async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
 /// # Errors
 /// Returns an error if the binary cannot be executed or if `swww` returns a non-zero exit code.
 pub async fn apply(
-    cli: &Cli,
+    config: &Config,
     cache: &WallpaperCache,
     monitors: &[String],
     swww_bin: &str,
 ) -> anyhow::Result<()> {
-    let step = cli.transition_step.to_string();
-    let fps = cli.transition_fps.to_string();
+    let step = config.transition_step.to_string();
+    let fps = config.transition_fps.to_string();
 
     for monitor in monitors {
         let img = cache.pick_random();
@@ -83,7 +83,7 @@ pub async fn apply(
             .arg("-o")
             .arg(monitor)
             .arg("--transition-type")
-            .arg(&cli.transition_type)
+            .arg(&config.transition_type)
             .arg("--transition-step")
             .arg(&step)
             .arg("--transition-fps")
