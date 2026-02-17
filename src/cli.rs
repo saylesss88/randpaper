@@ -44,6 +44,9 @@ pub struct Cli {
     pub config: Option<PathBuf>,
 }
 
+// Merge CLI Overrides
+// We manually map CLI args to the config structure to ensure CLI always wins
+// but only if the user actually provided the flag (Option::Some).
 #[derive(Serialize)]
 struct CliOverrides {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -132,10 +135,7 @@ impl Config {
             builder = builder.merge(Toml::file(path));
         }
 
-        // 3. Merge CLI Overrides
-        // We manually map CLI args to the config structure to ensure CLI always wins
-        // but only if the user actually provided the flag (Option::Some).
-
+        // 3. CLI overrides
         let overrides = CliOverrides {
             wallpaper_dir: cli.wallpaper_dir,
             time: cli.time,
