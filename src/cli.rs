@@ -85,8 +85,9 @@ pub enum BackendType {
 #[serde(rename_all = "lowercase")]
 pub enum RendererType {
     Swaybg,
-    #[clap(alias = "awww")]
-    Swww,
+    #[clap(alias = "swww")]
+    #[serde(alias = "swww")]
+    Awww,
 }
 
 /// The final configuration used by the application
