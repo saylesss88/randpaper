@@ -10,7 +10,7 @@ use tokio::time::sleep;
 mod render;
 
 // Re-exporting for use in `oneshot_mode()` in `main.rs`
-pub use render::swww::detect_swww_binary;
+pub use render::awww::detect_awww_binary;
 
 /// Runs the persistent background process that cycles wallpapers and themes.
 ///
@@ -29,7 +29,7 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
         parse_duration::parse(config.time.as_ref().expect("daemon mode requires --time"))
             .map_err(|e| anyhow::anyhow!("invalid duration: {e}"))?;
 
-    // Initialize the chosen rendering engine (swaybg or swww)
+    // Initialize the chosen rendering engine (swaybg or awww)
     let mut renderer = render::Renderer::new(&config).await?;
 
     // if cli.renderer == RendererType::Swww {

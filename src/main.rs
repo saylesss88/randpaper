@@ -40,7 +40,7 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
     let img = cache.pick_random();
     theme::update_theme_file(img)?;
 
-    // 3. Apply the wallpaper using the selected renderer (swaybg or swww)
+    // 3. Apply the wallpaper using the selected renderer (swaybg or awww)
     match config.renderer {
         RendererType::Swaybg => {
             let mut args = Vec::new();
@@ -72,14 +72,14 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
                 .context("oneshot: spawn swaybg")?;
         }
 
-        RendererType::Swww => {
-            let swww_bin = daemon::detect_swww_binary().await; // Use from daemon module
+        RendererType::Awww => {
+            let awww_bin = daemon::detect_awww_binary().await; // Use from daemon module
             let step = config.transition_step.to_string();
             let fps = config.transition_fps.to_string();
 
             for monitor in &monitors {
                 let img = cache.pick_random();
-                Command::new(&swww_bin)
+                Command::new(&awww_bin)
                     .arg("img")
                     .arg(img)
                     .arg("-o")
@@ -92,7 +92,7 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
                     .arg(&fps)
                     .status()
                     .await
-                    .with_context(|| format!("oneshot: swww img -o {monitor}"))?;
+                    .with_context(|| format!("oneshot: awww img -o {monitor}"))?;
             }
         }
     }

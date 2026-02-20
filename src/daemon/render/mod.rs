@@ -2,43 +2,43 @@ use crate::cli::{Config, RendererType};
 use crate::wallpaper::WallpaperCache;
 use tokio::process::Child;
 
+pub mod awww;
 mod swaybg;
-pub mod swww;
 
 /// Manages the lifecycle and execution of wallpaper rendering backends.
 ///
-/// The `Renderer` abstracts over different wallpaper utilities (like `swww` or `swaybg`),
+/// The `Renderer` abstracts over different wallpaper utilities (like `awww` or `swaybg`),
 /// handling process management for long-running children and binary detection.
 pub struct Renderer {
     /// Holds a reference to the active `swaybg` process, if running.
     /// This allows the renderer to kill the old process before starting a new one.
     swaybg_child: Option<Child>,
-    /// The path to the detected `swww` binary.
-    swww_bin: Option<String>,
+    /// The path to the detected `awww` binary.
+    awww_bin: Option<String>,
 }
 
 impl Renderer {
     /// Creates a new `Renderer` instance based on the user's CLI configuration.
     ///
-    /// If the `Swww` renderer is selected, this method will:
-    /// 1. Detect the `swww` binary in the system path.
-    /// 2. Ensure the `swww` daemon is initialized and running.
+    /// If the `Awww` renderer is selected, this method will:
+    /// 1. Detect the `awww` binary in the system path.
+    /// 2. Ensure the `awww` daemon is initialized and running.
     ///
     /// # Errors
     ///
     /// Returns an error if the renderer initialization (e.g., starting the daemon) fails.
     pub async fn new(config: &Config) -> anyhow::Result<Self> {
-        let swww_bin = match config.renderer {
-            RendererType::Swww => {
-                let bin = swww::detect_swww_binary().await;
-                swww::ensure_swww_daemon(&bin).await?;
+        let awww_bin = match config.renderer {
+            RendererType::Awww => {
+                let bin = awww::detect_awww_binary().await;
+                awww::ensure_awww_daemon(&bin).await?;
                 Some(bin)
             }
             RendererType::Swaybg => None,
         };
         Ok(Self {
             swaybg_child: None,
-            swww_bin,
+            awww_bin,
         })
     }
 
@@ -55,7 +55,7 @@ impl Renderer {
     ///
     /// # Panics
     ///
-    /// Panics if the renderer is set to `Swww` but the binary path was never initialized.
+    /// Panics if the renderer is set to `Awww` but the binary path was never initialized.
     pub async fn apply(
         &mut self,
         config: &Config,
@@ -64,9 +64,9 @@ impl Renderer {
     ) -> anyhow::Result<()> {
         match config.renderer {
             RendererType::Swaybg => swaybg::apply(cache, monitors, &mut self.swaybg_child).await,
-            RendererType::Swww => {
-                let bin = self.swww_bin.as_deref().expect("Renderer::new sets this");
-                swww::apply(config, cache, monitors, bin).await
+            RendererType::Awww => {
+                let bin = self.awww_bin.as_deref().expect("Renderer::new sets this");
+                awww::apply(config, cache, monitors, bin).await
             }
         }
     }

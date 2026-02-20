@@ -5,36 +5,36 @@ use std::time::Duration;
 use tokio::process::Command;
 use tokio::time::sleep;
 
-/// Attempts to find a compatible binary for `swww`.
+/// Attempts to find a compatible binary for `awww`.
 ///
-/// Checks for `swww` first, then `awww` (a common wrapper/alternative).
+/// Checks for `awww` first, then `swww` (a common wrapper/alternative).
 /// Defaults to "swww" if neither are found.
-pub async fn detect_swww_binary() -> String {
-    if Command::new("swww").arg("--help").output().await.is_ok() {
-        return "swww".to_string();
-    }
+pub async fn detect_awww_binary() -> String {
     if Command::new("awww").arg("--help").output().await.is_ok() {
         return "awww".to_string();
     }
-    log::warn!("Neither 'swww' nor 'awww' found. Defaulting to 'swww'.");
-    "swww".to_string()
+    if Command::new("swww").arg("--help").output().await.is_ok() {
+        return "swww".to_string();
+    }
+    log::warn!("Neither 'awww' nor 'swww' found. Defaulting to 'awww'.");
+    "awww".to_string()
 }
 
-/// Checks if the `swww-daemon` is currently intitialized and responding to queries.
-async fn swww_ready(swww_bin: &str) -> bool {
-    (Command::new(swww_bin).arg("query").status().await).is_ok_and(|st| st.success())
+/// Checks if the `awww-daemon` is currently intitialized and responding to queries.
+async fn awww_ready(awww_bin: &str) -> bool {
+    (Command::new(awww_bin).arg("query").status().await).is_ok_and(|st| st.success())
 }
 
-/// Ensures the `swww-daemon` is running.
+/// Ensures the `awww-daemon` is running.
 ///
 /// If the daemon is not responsive, it checks for an existing process via `pgrep`.
 /// If no process is found, it spawns a new daemon and waits briefly for it to initialize.
-pub async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
-    if swww_ready(swww_bin).await {
+pub async fn ensure_awww_daemon(awww_bin: &str) -> anyhow::Result<()> {
+    if awww_ready(awww_bin).await {
         return Ok(());
     }
 
-    let daemon_name = format!("{swww_bin}-daemon");
+    let daemon_name = format!("{awww_bin}-daemon");
     let status = Command::new("pgrep")
         .arg("-x")
         .arg(&daemon_name)
@@ -58,18 +58,18 @@ pub async fn ensure_swww_daemon(swww_bin: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Sends commands to the `swww` daemon to update wallpapers with transitions.
+/// Sends commands to the `awww` daemon to update wallpapers with transitions.
 ///
 /// This loops through each monitor and calls the `img` command.
 /// It uses transition settings (type, step, fps) provided in the `Cli` config.
 ///
 /// # Errors
-/// Returns an error if the binary cannot be executed or if `swww` returns a non-zero exit code.
+/// Returns an error if the binary cannot be executed or if `awww` returns a non-zero exit code.
 pub async fn apply(
     config: &Config,
     cache: &WallpaperCache,
     monitors: &[String],
-    swww_bin: &str,
+    awww_bin: &str,
 ) -> anyhow::Result<()> {
     let step = config.transition_step.to_string();
     let fps = config.transition_fps.to_string();
@@ -77,7 +77,7 @@ pub async fn apply(
     for monitor in monitors {
         let img = cache.pick_random();
 
-        let out = Command::new(swww_bin)
+        let out = Command::new(awww_bin)
             .arg("img")
             .arg(img)
             .arg("-o")
@@ -90,11 +90,11 @@ pub async fn apply(
             .arg(&fps)
             .output()
             .await
-            .with_context(|| format!("failed to run {swww_bin}"))?;
+            .with_context(|| format!("failed to run {awww_bin}"))?;
 
         if !out.status.success() {
             anyhow::bail!(
-                "{swww_bin} failed: {}",
+                "{awww_bin} failed: {}",
                 String::from_utf8_lossy(&out.stderr)
             );
         }
