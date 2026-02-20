@@ -74,6 +74,7 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
 
         RendererType::Awww => {
             let awww_bin = daemon::detect_awww_binary().await; // Use from daemon module
+            daemon::ensure_awww_daemon(&awww_bin).await?;
             let step = config.transition_step.to_string();
             let fps = config.transition_fps.to_string();
 
@@ -115,10 +116,14 @@ async fn main() -> anyhow::Result<()> {
     // Determine execution mode:
     // If no time interval is provided, run once and exit.
     // Otherwise, hand over control to the daemon's infinite loop.
-    if config.time.is_none() {
+    if !config.daemon {
         return oneshot_mode(&config).await;
     }
 
+    // Daemon mode
+    if config.time.is_none() {
+        anyhow::bail!("--daemon requires time to be set (config.toml or --time)");
+    }
     // Enter Daemon mode: --time flag present
     match config.backend {
         BackendType::Hyprland => {

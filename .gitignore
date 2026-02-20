@@ -5,6 +5,9 @@
 **/*.rs.bk
 .env
 themes/local_test.css
+node_modules/
+package-lock.json
+package.json
 
 # OS generated files
 .DS_Store

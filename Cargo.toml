@@ -20,6 +20,9 @@ exclude = [
 	"flake.nix",
 	"result",
 	"rustfmt.toml",
+	"node_modules/*",
+	"package-lock.json",
+	"package.json"
 ]
 
 [dependencies]

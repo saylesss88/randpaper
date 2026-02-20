@@ -30,9 +30,9 @@ synchronization—replacing complex script chains with a single, optimized binar
   cycling, or use one-shot mode for manual wallpaper changes.
 
 - 🛠️ **Modular Backends**: Works seamlessly with **Sway** and **Hyprland** (via
-  Sway IPC or `hyprctl`) and supports both `swaybg` and `swww` renderers.
+  Sway IPC or `hyprctl`) and supports both `swaybg` and `awww` renderers.
 
-- Support for both `swww` and its replacement `awww`.
+- Support for both `awww` and `swww` for compatibility.
 
 ---
 
@@ -40,7 +40,7 @@ synchronization—replacing complex script chains with a single, optimized binar
 
 **Prerequisites**
 
-You need `swaybg` or (`swww` / `awww`) installed as the renderer.
+You need `swaybg` or (`awww` / `swww`) installed as the renderer.
 
 ```bash
 # From source
@@ -132,8 +132,8 @@ wallpaper_dir = "/home/user/Pictures/Wallpapers"
 backend = "sway"
 
 # Tool used to set the wallpaper
-# Values: "swaybg" (static), "swww" (animated transitions)
-renderer = "swww"
+# Values: "swaybg" (static), & "awww" (animated transitions)
+renderer = "awww"
 
 # Update interval (if running as a daemon)
 # Examples: "30m", "1h", "45s"
@@ -163,7 +163,7 @@ Instead of a long command in your Sway or Hyprland config like this:
 
 ```bash
 # Old way in ~/.config/sway/config
-exec randpaper --time 10m --renderer swww --backend sway --wallpaper-dir ~/Pictures/Wallpapers
+exec randpaper --time 10m --renderer awww --backend sway --wallpaper-dir ~/Pictures/Wallpapers
 ```
 
 You can move all those settings into `~/.config/randpaper/config.toml`:
@@ -171,7 +171,7 @@ You can move all those settings into `~/.config/randpaper/config.toml`:
 ```toml
 # ~/.config/randpaper/config.toml
 time = "10m"
-renderer = "swww"
+renderer = "awww"
 backend = "sway"
 wallpaper_dir = "/home/user/Pictures/Wallpapers"
 ```
@@ -194,24 +194,24 @@ $mod+Shift+n exec randpaper
 
 ## 🧾 Usage
 
-**Daemon Mode (Background Process)**
+**Daemon Mode `--daemon` (Background Process)**
 
-With `swww` or `awww` installed you can test which mode you want from the
+With `awww` or `swww` installed you can test which mode you want from the
 command line before adding an `exec-once` for `randpaper` to your configuration:
 
 When you provide the `--time` flag, `randpaper` runs as a daemon and
 automatically cycles wallpapers at the specified interval:
 
 ```bash
-# Change every 5 minutes using Hyprland + swww transitions
-randpaper --time 5m --backend hyprland --renderer swww ~/Pictures/wallpapers
+# Change every 5 minutes using Hyprland + awww transitions
+randpaper --time 5m --backend hyprland --renderer awww ~/Pictures/wallpapers
 
 # Change every hour with custom transitions
-randpaper --time 1h --renderer swww --transition-type fade ~/Pictures/wallpapers
+randpaper --time 1h --renderer awww --transition-type fade ~/Pictures/wallpapers
 ```
 
-- These commands work without `swww-daemon` running because `randpaper`
-  automatically launches a `swww-daemon` process if one isn't already running.
+- These commands work without `awww-daemon` running because `randpaper`
+  automatically launches a `awww-daemon` process if one isn't already running.
 
 **One-Shot Mode (Pick Once & Exit)**
 
@@ -247,15 +247,15 @@ bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
 
 ```bash
 # Use fade transitions
-randpaper --renderer swww --transition-type fade --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers
+randpaper --renderer awww --transition-type fade --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers
 
 # Use wipe transitions for hyprland
-randpaper --renderer swww --transition-type wipe --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers --backend hyprland
+randpaper --renderer awww --transition-type wipe --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers --backend hyprland
 ```
 
-- Again, the above commands only work if there isn't already a `swww-daemon`
-  instance running. Adding an `exec randpaper` to your config automatically adds
-  an `exec swww-daemon`
+- Again, the above commands only work if there isn't already a `awww-daemon`
+  instance running. Adding an `exec randpaper` to your config automatically
+  starts the `awww-daemon`.
 
 - [Sample wallpaper repo](https://github.com/saylesss88/wallpapers2)
 

@@ -11,6 +11,7 @@ mod render;
 
 // Re-exporting for use in `oneshot_mode()` in `main.rs`
 pub use render::awww::detect_awww_binary;
+pub use render::awww::ensure_awww_daemon;
 
 /// Runs the persistent background process that cycles wallpapers and themes.
 ///
