@@ -42,6 +42,10 @@ pub struct Cli {
     /// Path to config file
     #[arg(long)]
     pub config: Option<PathBuf>,
+
+    /// If true, run as a persistent daemon. Requires `time` to be set.
+    #[arg(long, default_value_t = false)]
+    pub daemon: bool,
 }
 
 // Merge CLI Overrides
@@ -72,6 +76,8 @@ struct CliOverrides {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     transition_fps: Option<u8>,
+
+    daemon: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug, Serialize, Deserialize)]
@@ -101,6 +107,7 @@ pub struct Config {
     pub transition_type: String,
     pub transition_step: u8,
     pub transition_fps: u8,
+    pub daemon: bool,
 }
 
 impl Default for Config {
@@ -114,6 +121,7 @@ impl Default for Config {
             transition_type: "simple".to_string(),
             transition_step: 90,
             transition_fps: 30,
+            daemon: false,
         }
     }
 }
@@ -146,6 +154,7 @@ impl Config {
             transition_type: cli.transition_type,
             transition_step: cli.transition_step,
             transition_fps: cli.transition_fps,
+            daemon: cli.daemon,
         };
 
         builder = builder.merge(Serialized::defaults(overrides));
