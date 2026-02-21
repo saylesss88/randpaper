@@ -11,7 +11,7 @@ use std::path::PathBuf;
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// Directory containing wallpapers
-    #[arg(long)]
+    #[arg(short, long)]
     pub wallpaper_dir: Option<PathBuf>,
 
     /// Time interval for wallpaper updates (e.g., "5m", "1h")
