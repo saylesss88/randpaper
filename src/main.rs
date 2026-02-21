@@ -2,6 +2,7 @@
 mod backends;
 mod cli;
 mod daemon;
+mod daemon_lock;
 mod theme;
 mod traits;
 mod wallpaper;
@@ -104,27 +105,26 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Initialize logging (controlled via RUST_LOG env var)
     env_logger::init();
 
-    // Parse config (Merges Defaults -> Config File -> CLI Args)
     let config = Config::new()?;
-
-    // Ensure initial theme file exists to prevent Waybar `@import` crashes
     crate::theme::ensure_theme_exists()?;
 
-    // Determine execution mode:
-    // If no time interval is provided, run once and exit.
-    // Otherwise, hand over control to the daemon's infinite loop.
     if !config.daemon {
         return oneshot_mode(&config).await;
     }
 
-    // Daemon mode
+    // --daemon mode
     if config.time.is_none() {
         anyhow::bail!("--daemon requires time to be set (config.toml or --time)");
     }
-    // Enter Daemon mode: --time flag present
+
+    // One daemon per login session: use a runtime-dir lock (per-session).
+    // XDG_RUNTIME_DIR is the right place for per-session runtime state.
+    let Some(_guard) = crate::daemon_lock::single_instance_guard()? else {
+        return Ok(());
+    };
+
     match config.backend {
         BackendType::Hyprland => {
             log::info!("Using Hyprland backend");
