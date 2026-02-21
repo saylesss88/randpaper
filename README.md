@@ -66,6 +66,9 @@ randpaper --renderer awww --transition-type wipe --transition-step 90 --transiti
 Once you find what you like, either add an `exec` to the chosen command, or
 throw the options in a `config.toml` and simplify the `exec` greatly.
 
+> NOTE: It’s safe to use `exec_always` with `randpaper --daemon`; extra starts
+> exit cleanly if an instance is already running. (Same with from the CLI)
+
 ---
 
 ## 📚️ Configuration (Optional)
@@ -148,11 +151,6 @@ bindsym $mod+Shift+n exec randpaper
 bind = $mainMod SHIFT, N, exec, randpaper
 ```
 
-The above keybinds cycle wallpapers & themes without spawning a `--daemon`
-process. This is also the recommended way to cycle wallpapers & themes **after**
-the daemon is started. (This prevents multiple `--daemon` processes being
-spawned)
-
 ---
 
 ### Daemon mode (`--daemon`)
@@ -183,7 +181,7 @@ exec-once = randpaper --daemon
 ```
 
 On standard filesystem hierarchy systems you can also force the daemon to cycle
-without spawning a separate process:
+without spawning a separate process (there's a guard preventing this anyways):
 
 ```bash
 pkill -USR1 randpaper
