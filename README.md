@@ -1,14 +1,11 @@
-[![Nix Flake](https://img.shields.io/badge/Nix_Flake-Geared-dddd00?logo=nixos&logoColor=white)](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake.html)
+# randpaper
 
-[![Nix](https://img.shields.io/badge/Nix-5277C3?style=flat&logo=nixos&logoColor=white)](https://nixos.org)
+Fast per-monitor wallpaper rotation + optional theme syncing for Wayland
+(Sway/Hyprland).
 
-<video src="https://github.com/user-attachments/assets/e0ad3f8a-9d5a-4229-a797-cd756817762d" controls></video>
-
-# randpaper - A high-performance wallpaper & theme daemon for Wayland
-
-`randpaper` is a lightweight Rust utility designed for efficiency. It manages
-per-monitor wallpaper rotation and optional system-wide theme
-synchronization—replacing complex script chains with a single, optimized binary.
+`randpaper` caches your wallpaper list once, picks random images per output, and
+can optionally generate theme files (terminals + Waybar) from the current
+wallpaper.
 
 # 🚀 Features
 
@@ -49,233 +46,142 @@ cargo install --git https://github.com/saylesss88/randpaper
 cargo install randpaper
 ```
 
-<details>
-<summary> ✔️ Nix </summary>
-
-Add as a flake input:
-
-```nix
-inputs = {
-  randpaper.url = "github:saylesss88/randpaper";
-};
-```
-
-Install in `environment.systemPackages` or `home.packages`:
-
-```nix
-environment.systemPackages = {
-  inputs.randpaper.packages.${pkgs.stdenv.hostPlatform.system}.default
-};
-```
-
-- Pass `inputs` through `specialArgs` in your `flake.nix`
-
-And add an `exec` for either hyprland or sway, only for `randpaper`:
-
-Hyprland Example:
-
-```nix
-wayland.windowManager.hyprland = {
-  settings = {
-    exec-once = [
-  # Standard Usage
-  "randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland --renderer swww"
-  # UWSM Usage w/ swaybg
-  "uwsm app -- randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland --renderer swaybg"
-    ];
-  };
-}
-```
-
-Sway Example:
-
-```nix
-wayland.windowManager.sway = {
-  extraConfig = ''
-    # Default backend is Sway
-     exec randpaper --time 30m /home/your-user/wallpapers
-  '';
-};
-```
-
-> Note: `randpaper` manages the renderer process for you. You do not need
-> separate `exec-once = swaybg ...` or `exec-once = swww ...` lines in your
-> config.
-
-</details>
-
----
-
-## 📚️ Configuration
-
-`randpaper` supports an optional TOML configuration file. By default, it looks
-for `config.toml` in your XDG config directory:
-
-```bash
-~/.config/randpaper/config.toml
-```
-
-You can also specify a custom config file path at runtime:
-
-```bash
-randpaper --config ./my-config.toml
-```
-
-Example `config.toml`:
-
-```toml
-# Path to your wallpaper directory (defaults to current directory if omitted)
-wallpaper_dir = "/home/user/Pictures/Wallpapers"
-
-# Backend to use for monitor detection
-# Values: "sway", "hyprland"
-backend = "sway"
-
-# Tool used to set the wallpaper
-# Values: "swaybg" (static), & "awww" (animated transitions)
-renderer = "awww"
-
-# Update interval (if running as a daemon)
-# Examples: "30m", "1h", "45s"
-time = "10m"
-
-# Transition settings (only used with swww renderer)
-transition_type = "simple"
-transition_step = 90
-transition_fps = 60
-
-# Optional: Force wallpaper only on specific outputs
-# outputs = ["DP-1", "HDMI-A-1"]
-```
-
-**Precedence**
-
-Command-line arguments **always override** the configuration file.
-
-For example, if your config file sets `renderer = "swww"`, you can temporarily
-force `swaybg` for a single run without editing the file:
-
-```bash
-randpaper --renderer swaybg
-```
-
-Instead of a long command in your Sway or Hyprland config like this:
-
-```bash
-# Old way in ~/.config/sway/config
-exec randpaper --time 10m --renderer awww --backend sway --wallpaper-dir ~/Pictures/Wallpapers
-```
-
-You can move all those settings into `~/.config/randpaper/config.toml`:
-
-```toml
-# ~/.config/randpaper/config.toml
-time = "10m"
-renderer = "awww"
-backend = "sway"
-wallpaper_dir = "/home/user/Pictures/Wallpapers"
-```
-
-And then your Sway config becomes much cleaner:
-
-```bash
-# New way
-exec randpaper
-```
-
-And change your one-shot command to match:
-
-```conf
-# Sway
-$mod+Shift+n exec randpaper
-```
-
----
-
-## 🧾 Usage
-
-**Daemon Mode `--daemon` (Background Process)**
-
-With `awww` or `swww` installed you can test which mode you want from the
-command line before adding an `exec-once` for `randpaper` to your configuration:
-
-When you provide the `--time` flag, `randpaper` runs as a daemon and
-automatically cycles wallpapers at the specified interval:
-
-```bash
-# Change every 5 minutes using Hyprland + awww transitions
-randpaper --time 5m --backend hyprland --renderer awww ~/Pictures/wallpapers
-
-# Change every hour with custom transitions
-randpaper --time 1h --renderer awww --transition-type fade ~/Pictures/wallpapers
-```
-
-- These commands work without `awww-daemon` running because `randpaper`
-  automatically launches a `awww-daemon` process if one isn't already running.
-
-**One-Shot Mode (Pick Once & Exit)**
-
-Without the `--time` flag, `randpaper` picks a random wallpaper, updates themes,
-and exits immediately.
-
-It's recommended to run one-shot via a compositor keybind so it inherits the
-correct session/IPC environment.(i.e., running
-`randpaper ~/Pictures/wallpapers`from the command line doesn't work as expected)
-
-```conf
-# Sway: cycle wallpaper + themes now (one-shot)
-bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
-```
-
-```conf
-# Hyprland: cycle wallpaper + themes (one-shot)
-"$mod SHIFT,N,exec, randpaper --backend hyprland /home/jr/Pictures/wallpapers2"
-```
-
-- `swaybg` can't be one-shot from the command line because it's not a
-  set-and-exit command; it's a long-running wallpaper service.
-
-**Use cases for one-shot mode**:
-
-- Manual wallpaper changes via keybinds
-
-- Scripted theme updates
-
-- Testing without running a daemon
-
-**swww/awww Transitions**:
+After `randpaper` and `awww` are installed, you can ensure that it automatically
+detects your monitors and see which transition you like with commands like:
 
 ```bash
 # Use fade transitions
-randpaper --renderer awww --transition-type fade --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers
+randpaper --renderer awww --transition-type fade --transition-step 90 --transition-fps 60 --wallpaper-dir ~/Pictures/wallpapers
 
 # Use wipe transitions for hyprland
-randpaper --renderer awww --transition-type wipe --transition-step 90 --transition-fps 60 ~/Pictures/wallpapers --backend hyprland
+randpaper --renderer awww --transition-type wipe --transition-step 90 --transition-fps 60 --wallpaper-dir ~/Pictures/wallpapers --backend hyprland
 ```
 
-- Again, the above commands only work if there isn't already a `awww-daemon`
-  instance running. Adding an `exec randpaper` to your config automatically
-  starts the `awww-daemon`.
+Once you find what you like, either add an `exec` to the chosen command, or
+throw the options in a `config.toml` and simplify the `exec` greatly.
 
-- [Sample wallpaper repo](https://github.com/saylesss88/wallpapers2)
+---
 
-**Advanced Options**
+## 📚️ Configuration (Optional)
 
-| Flag                    | Description                              | Default       |
-| :---------------------- | :--------------------------------------- | :------------ |
-| `[DIR]`                 | Directory containing images              | `.`           |
-| `-t, --time`            | Time between changes(e.g., 15m, 1h)      | `30m`         |
-| `-b, --backend`         | Detection backend: `sway` or `hyprland`  | `sway`        |
-| `-o, --outputs`         | Specific outputs to target (Sway only)   | Auto-discover |
-| `-r, --renderer`        | Renderer tool: `swaybg` or `swww`        | `swaybg`      |
-| `--transition-type`     | swww transition: `fade`, `wipe`, `outer` | `simple`      |
-| `-s, --transition-step` | swww transition step (0-100)             | `90`          |
-| `-f, --transition-fps`  | swww target frame rate for transitions   | `30`          |
+Config file (XDG):
+
+- `~/.config/randpaper/config.toml`
+
+Example:
+
+```toml
+wallpaper_dir = "/home/user/Pictures/wallpapers"
+backend = "sway"        # "sway" | "hyprland"
+renderer = "awww"       # "swaybg" | "awww"
+time = "30m"            # used only in daemon mode
+
+transition_type = "wipe"
+transition_step = 90
+transition_fps = 60
+
+# outputs = ["DP-1", "HDMI-A-1"]
+```
+
+Precidence:
+
+- CLI args override `config.toml`.
+
+---
+
+## Usage
+
+**Command flag table**
+
+| Flag                    | Description                                  | Default       |
+| :---------------------- | :------------------------------------------- | :------------ |
+| `[DIR]`                 | Directory containing images                  | `.`           |
+| `-t, --time`            | Time between changes(e.g., 15m, 1h)          | NA            |
+| `--daemon`              | Activate daemon-mode, `--time` also required | NA            |
+| `-w, --wallpaper-dir`   | Directory containing wallpaper images        | `.`           |
+| `--config`              | Directory containing `config.toml`           | NA            |
+| `-b, --backend`         | Detection backend: `sway` or `hyprland`      | `sway`        |
+| `-o, --outputs`         | Specific outputs to target (Sway only)       | Auto-discover |
+| `-r, --renderer`        | Renderer tool: `swaybg` or `awww`            | `swaybg`      |
+| `--transition-type`     | swww transition: `fade`, `wipe`, `outer`     | `simple`      |
+| `-s, --transition-step` | swww transition step (0-100)                 | `90`          |
+| `-f, --transition-fps`  | swww target frame rate for transitions       | `30`          |
 
 - `--transition-type`: Choose between (`simple`, `fade`, `wipe`, `outer`,
   `inner`, `random`)
 
 > NOTE: All transition options are ignored when using `--renderer swaybg`.
+
+---
+
+### One-shot (default)
+
+Applies a wallpaper + updates themes once, then exits.
+
+```sh
+# Runs with settings from `config.toml`
+randpaper
+# Without using the `config.toml` any command without both `--daemon` & `--time` set
+# are one-shot commands
+randpaper --backend hyprland --renderer swaybg --wallpaper-dir ~/Pictures/wallpapers
+# or
+randpaper --daemon -t 1m -b sway -r awww --transition-type wipe
+```
+
+Recommended one-shot keybinds:
+
+**Sway**
+
+```text
+bindsym $mod+Shift+n exec randpaper
+```
+
+**Hyprland**
+
+```text
+bind = $mainMod SHIFT, N, exec, randpaper
+```
+
+The above keybinds cycle wallpapers & themes without spawning a `--daemon`
+process. This is also the recommended way to cycle wallpapers & themes **after**
+the daemon is started. (This prevents multiple `--daemon` processes being
+spawned)
+
+---
+
+### Daemon mode (`--daemon`)
+
+Runs continuously and rotates wallpapers on a timer.
+
+**Daemon mode Requirements**:
+
+- `--daemon` must be provided.
+
+- `time` must be set (via `config.toml` or `--time`).
+
+Recommended autostart:
+
+**Sway**
+
+```text
+# With `config.toml`
+exec randpaper --daemon
+# Or something like this without using the config:
+exec randpaper -w ~/Pictures/wallpapers -t 5m -r awww --daemon
+```
+
+**Hyprland**
+
+```text
+exec-once = randpaper --daemon
+```
+
+On standard filesystem hierarchy systems you can also force the daemon to cycle
+without spawning a separate process:
+
+```bash
+pkill -USR1 randpaper
+```
 
 ---
 
@@ -335,55 +241,9 @@ $mod+Shift+t exec kitty -o allow_remote_control=yes --listen-on unix:/tmp/mykitt
   reliably; close and reopen the terminal to pick up the new theme. (Work in
   Progress)
 
-<details>
-<summary> ✔️GhosTTY/Kitty on NixOS dynamic theming </summary>
-
-**GhosTTY**
-
-```nix
-# home.nix or ghostty.nix
-programs.ghostty = {
-  enable = true;
-  settings = {
-    # The '?' makes the include optional/non-blocking
-    "config-file" = "?~/.config/randpaper/themes/ghostty.config";
-  };
-};
-```
-
-- On boot up, the generated theme will be applied.
-
-- Run the cycle command then type `pkill -USR2 ghostty` to apply the theme
-  instantly.
-
-**Kitty**
-
-```nix
-programs.kitty = {
-  extraConfig = ''
-    allow_remote_control yes
-    listen_on unix:/tmp/mykitty
-    include ~/.config/randpaper/themes/kitty.conf
-  '';
-};
-```
-
-Add this keybind:
-
-```nix
-"$mod,T,exec,kitty -o allow_remote_control=yes --listen-on unix:/tmp/mykitty"
-# One-Shot for Hyprland
-"$mod SHIFT,N,exec, randpaper --backend hyprland /home/Your-User/Pictures/wallpapers"
-```
-
-Now running the above one-shot command will dynamically reload the kitty theme
-and apply it automatically.
-
-</details>
-
 ---
 
-## 🫟 Waybar Dynamic Theming (Optional)
+## 🫟 Waybar Dynamic Theming
 
 <details>
 <summary> ✔️ Waybar Dynamic Theming </summary>
@@ -394,7 +254,7 @@ To use `randpaper` with a `waybar` setup, ensure you call the daemon via
 (Sway Example `~/.config/sway/config`):
 
 ```config
-exec randpaper --time 10m ~/Pictures/wallpapers
+exec randpaper --time 15m --wallpaper-dir ~/Pictures/wallpapers --daemon
 
 bar {
     swaybar_command waybar
@@ -447,8 +307,8 @@ window#waybar {
 }
 
 #workspaces button.focused {
-  background-color: @rp_accent;
-  color: @rp_bg;
+  background-color: @rp_bg;
+  color: @rp_accent;
 }
 ```
 
@@ -464,68 +324,138 @@ CSS variables the more noticeable it will be.
 > NOTE: Just adding the `@import` at the top makes the variables available, you
 > need to reference them for the changes to be applied.
 
-- [NixOS Waybar Example](https://github.com/saylesss88/flake/blob/main/home/hypr/waybar.nix)
-
 - On NixOS, after cycling with one-shot run `pkill -USR2 waybar` to apply the
   new theme.
 
 </details>
 
----
+## NixOS
 
-## ⏭️ Cycling Wallpapers & Themes
+<details>
+<summary> ✔️ NixOS </summary>
 
-### Manual Wallpaper Change (Recommended)
+Add as a flake input:
 
-The simplest way to instantly change wallpapers is to run one-shot mode while
-the randpaper daemon is running:
-
-**Hyprland Config**:
-
-```text
-bind = $mainMod SHIFT, N, exec, randpaper ~/Pictures/wallpapers --backend hyprland
+```nix
+inputs = {
+  randpaper.url = "github:saylesss88/randpaper";
+};
 ```
 
-**Sway Config**:
+Install in `environment.systemPackages` or `home.packages`:
 
-```text
-bindsym $mod+Shift+n exec randpaper ~/Pictures/wallpapers
+```nix
+environment.systemPackages = {
+  inputs.randpaper.packages.${pkgs.stdenv.hostPlatform.system}.default
+};
 ```
 
-This picks a new wallpaper, updates all themes (terminal + Waybar), and exits.
-Your background daemon continues running for automatic cycles.
+- Pass `inputs` through `specialArgs` in your `flake.nix`
 
----
+And add an `exec` for either hyprland or sway, only for `randpaper`:
 
-### Signal Running Daemon (Alternative for Standare Filesystem Hierarchy layouts)
+Hyprland Example:
 
-You can also force the daemon to cycle immediately without spawning a separate
-process:
-
-**Sway Config**:
-
-```text
-bindsym $mod+n exec pkill -USR1 randpaper
+```nix
+wayland.windowManager.hyprland = {
+  settings = {
+    exec-once = [
+  # Standard Usage
+  "randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland --renderer swww"
+  # UWSM Usage w/ swaybg
+  "uwsm app -- randpaper --time 15m /home/your-user/Pictures/wallpapers --backend hyprland --renderer swaybg"
+    ];
+  };
+}
 ```
 
-**Hyprland Config**:
+Sway Example:
 
-```text
-bind = $mainMod SHIFT, N, exec, pkill -USR1 randpaper
+```nix
+wayland.windowManager.sway = {
+  extraConfig = ''
+    # Default backend is Sway
+     exec randpaper --time 30m /home/your-user/wallpapers
+  '';
+};
 ```
 
-**Shell**:
+> Note: `randpaper` manages the renderer process for you. You do not need
+> separate `exec-once = swaybg ...` or `exec-once = swww ...` lines in your
+> config.
 
-```bash
-pkill -USR1 randpaper
+### Using the `config.toml` on NixOS
+
+To use the config file on NixOS you can do something like this:
+
+```nix
+home.file = {
+  ".config/randpaper/config.toml".text = ''
+      # ~/.config/randpaper/config.toml
+      time = "10m"
+      renderer = "awww"
+      backend = "hyprland"
+      wallpaper_dir = "/home/user/Pictures/Wallpapers"
+  '';
+};
 ```
 
-Now when you run the above keybind, you will get a new wallpaper, terminal
-theme, and waybar theme.
+And now your `exec` can be simplified to:
 
-> NOTE: Expect different behavior on NixOS.
+```nix
+exec-once = [
+  "randpaper --daemon"
+];
+```
 
----
+### Terminal & Waybar Theming on NixOS
+
+**GhosTTY**
+
+```nix
+# home.nix or ghostty.nix
+programs.ghostty = {
+  enable = true;
+  settings = {
+    # The '?' makes the include optional/non-blocking
+    "config-file" = "?~/.config/randpaper/themes/ghostty.config";
+  };
+};
+```
+
+- On boot up, the generated theme will be applied.
+
+- Run the cycle command then type `pkill -USR2 ghostty` to apply the theme
+  instantly.
+
+**Kitty (Recommended on NixOS)**
+
+```nix
+programs.kitty = {
+  extraConfig = ''
+    allow_remote_control yes
+    listen_on unix:/tmp/mykitty
+    include ~/.config/randpaper/themes/kitty.conf
+  '';
+};
+```
+
+Add this keybind:
+
+```nix
+"$mod,T,exec,kitty -o allow_remote_control=yes --listen-on unix:/tmp/mykitty"
+# One-Shot for Hyprland
+"$mod SHIFT,N,exec, randpaper --backend hyprland /home/Your-User/Pictures/wallpapers"
+```
+
+Now running the above one-shot command will dynamically reload the kitty theme
+and apply it automatically.
+
+### Waybar on NixOS
+
+- [NixOS Waybar Example](https://github.com/saylesss88/flake/blob/main/home/hypr/waybar.nix)
+
+</details>
 
 ## ⚙️ How it Works
 
@@ -540,15 +470,13 @@ theme, and waybar theme.
 
 - Generates theme files and triggers terminal reloads.
 
-- Spawns a non-blocking background process (`swaybg` daemon or `swww` client) to
+- Spawns a non-blocking background process (`swaybg` daemon or `awww` client) to
   update the display.
 
 - Sleeps efficiently until the next cycle.
 
-3. One-Shot (no `--time`): Picks wallpaper, updates themes, exits immediately.
-
-- Works reliably as a keybind, may have to close out terminal and relaunch for
-  the new theme to be applied.
+3. One-Shot (no `--time` or `--daemon`): Picks wallpaper, updates themes, exits
+   immediately.
 
 ---
 
