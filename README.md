@@ -1,4 +1,10 @@
+[![Nix Flake](https://img.shields.io/badge/Nix_Flake-Geared-dddd00?logo=nixos&logoColor=white)](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake.html)
+
+[![Nix](https://img.shields.io/badge/Nix-5277C3?style=flat&logo=nixos&logoColor=white)](https://nixos.org)
+
 # randpaper
+
+![randpaper demo](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/demo.gif)
 
 Fast per-monitor wallpaper rotation + optional theme syncing for Wayland
 (Sway/Hyprland).
