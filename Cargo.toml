@@ -1,6 +1,6 @@
 [package]
 name = "randpaper"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2024"
 description = "A customizable wallpaper daemon for per-monitor cycling, one-shot application, and optional theme synchronization for Waybar and terminals."
 readme = "README.md"
@@ -33,6 +33,7 @@ color-thief = "0.2.2"
 dirs = "6.0.0"
 env_logger = "0.11.8"
 figment = {version = "0.10.19", features = ["toml", "env"]}
+fslock = "0.2.1"
 hex = "0.4.3"
 image = "0.25.9"
 libc = "0.2.181"
