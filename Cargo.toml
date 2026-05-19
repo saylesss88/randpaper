@@ -33,9 +33,14 @@ clap = {version = "4.5.57", features = ["derive"]}
 color-thief = "0.2.2"
 dirs = "6.0.0"
 env_logger = "0.11.8"
-figment = {version = "0.10.19", features = ["toml", "env"]}
+figment = {version = "0.10.19", features = ["env", "toml"]}
 fslock = "0.2.1"
-image = "0.25.9"
+image = {version = "0.25.9", default-features = false, features = [
+	"jpeg",
+	"png",
+	"bmp",
+	"webp",
+]}
 log = "0.4.29"
 parse_duration = "2.1.1"
 rand = "0.10.0"
@@ -69,8 +74,7 @@ panic = "warn"       # Warns on code that can panic
 
 [profile.release]
 opt-level = 3
-lto = "fat"
-codegen-units = 1
+lto = "thin"
+codegen-units = 8
+panic = 'abort'
 strip = true
-panic = "abort"
-debug = false
