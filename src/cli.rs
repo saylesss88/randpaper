@@ -85,6 +85,7 @@ struct CliOverrides {
 pub enum BackendType {
     Hyprland,
     Sway,
+    Mango,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug, Serialize, Deserialize)]

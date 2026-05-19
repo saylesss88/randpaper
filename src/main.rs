@@ -7,8 +7,7 @@ mod theme;
 mod traits;
 mod wallpaper;
 
-use crate::backends::hyprland::HyprlandBackend;
-use crate::backends::sway::SwayBackend;
+use crate::backends::{hyprland::HyprlandBackend, mango::MangoBackend, sway::SwayBackend};
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
 use anyhow::Context;
@@ -29,6 +28,7 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
     // 1. Identify active monitors based on the user-selected backend (Hyprland or Sway)
     let monitors = match config.backend {
         BackendType::Hyprland => HyprlandBackend.get_active_monitors().await?,
+        BackendType::Mango => MangoBackend.get_active_monitors().await?,
         BackendType::Sway => {
             let backend = SwayBackend {
                 outputs_override: config.outputs.clone(),
@@ -129,6 +129,10 @@ async fn main() -> anyhow::Result<()> {
         BackendType::Hyprland => {
             log::info!("Using Hyprland backend");
             daemon::run_loop(config, HyprlandBackend).await?;
+        }
+        BackendType::Mango => {
+            log::info!("Using MangoWM backend");
+            daemon::run_loop(config, MangoBackend).await?;
         }
         BackendType::Sway => {
             log::info!("Using Sway backend");
