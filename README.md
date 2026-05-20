@@ -7,7 +7,7 @@
 ![randpaper demo](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/demo.gif)
 
 Fast per-monitor wallpaper rotation + optional theme syncing for Wayland
-(Sway/Hyprland).
+(Sway/Hyprland/MangoWM).
 
 `randpaper` caches your wallpaper list once, picks random images per output, and
 can optionally generate theme files (terminals + Waybar) from the current
@@ -32,8 +32,9 @@ wallpaper.
 - 🔄 **Dual Operating Modes**: Run as a background daemon with automatic
   cycling, or use one-shot mode for manual wallpaper changes.
 
-- 🛠️ **Modular Backends**: Works seamlessly with **Sway** and **Hyprland** (via
-  Sway IPC or `hyprctl`) and supports both `swaybg` and `awww` renderers.
+- 🛠️ **Modular Backends**: Works seamlessly with **Sway** ,**Hyprland**, and
+**MangoWM**)) (via
+  Sway IPC , `hyprctl`, or `mmsg`) and supports both `swaybg` and `awww` renderers.
 
 - Support for both `awww` and `swww` for compatibility.
 
@@ -61,6 +62,8 @@ randpaper --renderer awww --transition-type fade --transition-step 90 --transiti
 
 # Use wipe transitions for hyprland
 randpaper --renderer awww --transition-type wipe --transition-step 90 --transition-fps 60 --wallpaper-dir ~/Pictures/wallpapers --backend hyprland
+# Use wipe transitions for mango
+randpaper --renderer awww --transition-type wipe --transition-step 90 --transition-fps 60 --wallpaper-dir ~/Pictures/wallpapers --backend mango
 ```
 
 Once you find what you like, either add an `exec` to the chosen command, or
@@ -81,7 +84,7 @@ Example:
 
 ```toml
 wallpaper_dir = "/home/user/Pictures/wallpapers"
-backend = "sway"        # "sway" | "hyprland"
+backend = "sway"        # "sway" | "hyprland" | "mango"
 renderer = "awww"       # "swaybg" | "awww"
 time = "30m"            # used only in daemon mode
 
@@ -151,6 +154,16 @@ bindsym $mod+Shift+n exec randpaper
 bind = $mainMod SHIFT, N, exec, randpaper
 ```
 
+**MangoWM**
+
+```text
+bind=SUPER+SHIFT,N,spawn,/home/user/.config/.cargo/bin/randpaper
+```
+
+> [!NOTE]
+> You may have to set up a shell script with Mango, keybinds
+for many commands haven't worked as expected
+
 ---
 
 ### Daemon mode (`--daemon`)
@@ -180,12 +193,22 @@ exec randpaper -w ~/Pictures/wallpapers -t 5m -r awww --daemon
 exec-once = randpaper --daemon
 ```
 
+**MangoWM**
+
+Add the following to your `mango/autostart.sh`:
+
+```text
+randpaper --daemon 2>&1 &
+```
+
 On standard filesystem hierarchy systems you can also force the daemon to cycle
 without spawning a separate process (there's a guard preventing this anyways):
 
 ```bash
 pkill -USR1 randpaper
 ```
+
+- This doesn't work with Mango.
 
 ---
 
