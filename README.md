@@ -157,12 +157,20 @@ bind = $mainMod SHIFT, N, exec, randpaper
 **MangoWM**
 
 ```text
-bind=SUPER+SHIFT,N,spawn,/home/user/.config/.cargo/bin/randpaper
+bind=SUPER+SHIFT,N,spawn,randpaper
 ```
 
 > [!NOTE]
-> You may have to set up a shell script with Mango, keybinds
-for many commands haven't worked as expected
+> For this to work, you need to add `randpaper` and `awww`'s PATHS to MangoWM's
+> startup environment. (i.e., add environment variables).
+>
+> - `mango/env.conf`
+>
+> ```text
+> # ~/.config/mango/env.conf
+> env=PATH,/home/jr/.local/bin:/home/jr/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+> ```
+> - Make sure to source it, in your main config add: `source=./env.conf`
 
 ---
 
@@ -208,11 +216,15 @@ without spawning a separate process (there's a guard preventing this anyways):
 pkill -USR1 randpaper
 ```
 
-- This doesn't work with Mango.
+> [!NOTE]
+> Using `pkill` can be hit or miss. `--daemon` mode is more meant for you to
+> set it and forget it.
 
 ---
 
 ## 🎨 Automatic Terminal Theming
+
+> Now with much more readable themes!!
 
 `randpaper` automatically extracts a 16-color palette from your wallpaper and
 generates theme files in `~/.config/randpaper/themes/`.
