@@ -2,8 +2,8 @@ use anyhow::Context;
 use std::fmt::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::Duration;
-use std::{fs, thread};
+// use std::time::Duration;
+use std::fs;
 
 /// Represents a color in the Red-Green-Blue color space.
 #[derive(Clone, Copy, Debug)]
@@ -22,7 +22,10 @@ impl Rgb {
     /// Calculates the relative luminance of the color.
     /// Used to determine how "bright" a color appears to the human eye.
     fn luminance(self) -> f32 {
-        0.2126f32.mul_add(f32::from(self.r), 0.7152 * f32::from(self.g))
+        0.0722f32.mul_add(
+            f32::from(self.b),
+            0.7152f32.mul_add(f32::from(self.g), 0.2126 * f32::from(self.r)),
+        )
     }
 
     /// A simple heuristic for color saturation by calculating the
@@ -31,6 +34,14 @@ impl Rgb {
         let max = self.r.max(self.g).max(self.b);
         let min = self.r.min(self.g).min(self.b);
         max - min
+    }
+
+    /// Returns the contrast ratio between two colors (simplified WCAG formula).
+    /// A ratio >= 4.5 ia considered accessible for normal text.
+    fn contrast_ratio(self, other: Self) -> f32 {
+        let l1 = self.luminance() / 255.0 + 0.05;
+        let l2 = other.luminance() / 255.0 + 0.05;
+        if l1 > l2 { l1 / l2 } else { l2 / l1 }
     }
 }
 
@@ -43,11 +54,37 @@ fn pick_roles(colors: &[Rgb]) -> (Rgb, Rgb, Rgb, Rgb, Rgb) {
 
     // Background is the darkest, Foreground is the lightest
     let bg = sorted[0];
-    let fg = *sorted.last().unwrap_or(&Rgb {
+
+    let candidate_fg = *sorted.last().unwrap_or(&Rgb {
         r: 225,
         g: 225,
         b: 225,
     });
+
+    // If contrast is too low (both dark or both light), fall back to a safe color
+    let fg = if bg.contrast_ratio(candidate_fg) < 3.0 {
+        // bg is dark → use near-white; bg is light → use near-black
+        if bg.luminance() < 128.0 {
+            Rgb {
+                r: 220,
+                g: 220,
+                b: 220,
+            } // near-white fallback
+        } else {
+            Rgb {
+                r: 30,
+                g: 30,
+                b: 30,
+            } // near-black fallback
+        }
+    } else {
+        candidate_fg
+    };
+    // let fg = *sorted.last().unwrap_or(&Rgb {
+    //     r: 225,
+    //     g: 225,
+    //     b: 225,
+    // });
 
     // Accent is the most "vibrant" color in the pallete
     let accent = sorted
@@ -226,10 +263,10 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     log::info!("Updated themes in {}", theme_dir.display());
 
     // Small delay to ensure filesystem has flushed the writes
-    thread::sleep(Duration::from_millis(100));
+    // thread::sleep(Duration::from_millis(100));
 
-    // 4. Reload Waybar
-    () = reload_waybar_only();
+    // // 4. Reload Waybar
+    reload_waybar_only();
 
     // 5. Best-effort to reload foot
     let foot_result = Command::new("sh")
@@ -238,21 +275,23 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     log::info!("Foot reload result: {foot_result:?}");
 
     // 6. Reload Kitty (Requires remote control / unix socket enabled)
-    let kitty_conf = theme_dir.join("kitty.conf");
-    let kitty_result = Command::new("kitten")
-        .args([
-            "@",
-            "--to",
-            "unix:/tmp/mykitty",
-            "set-colors",
-            "--all",
-            "--configured",
-            kitty_conf
-                .to_str()
-                .ok_or_else(|| anyhow::anyhow!("non-utf8 path"))?,
-        ])
-        .status();
-    log::info!("Kitty set-colors result: {kitty_result:?}");
+    if Path::new("/tmp/mykitty").exists() {
+        let kitty_conf = theme_dir.join("kitty.conf");
+        let kitty_result = Command::new("kitten")
+            .args([
+                "@",
+                "--to",
+                "unix:/tmp/mykitty",
+                "set-colors",
+                "--all",
+                "--configured",
+                kitty_conf
+                    .to_str()
+                    .ok_or_else(|| anyhow::anyhow!("non-utf8 path"))?,
+            ])
+            .status();
+        log::info!("Kitty set-colors result: {kitty_result:?}");
+    }
 
     // 7. Reload Ghostty (SIGUSR2 triggers config reload)
     let _ = Command::new("pkill")
