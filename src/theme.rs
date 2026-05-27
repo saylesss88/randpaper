@@ -80,11 +80,6 @@ fn pick_roles(colors: &[Rgb]) -> (Rgb, Rgb, Rgb, Rgb, Rgb) {
     } else {
         candidate_fg
     };
-    // let fg = *sorted.last().unwrap_or(&Rgb {
-    //     r: 225,
-    //     g: 225,
-    //     b: 225,
-    // });
 
     // Accent is the most "vibrant" color in the pallete
     let accent = sorted

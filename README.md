@@ -226,6 +226,8 @@ pkill -USR1 randpaper
 
 > Now with much more readable themes!!
 
+- WIP, this works best without `zsh-syntax-highlighting`.
+
 `randpaper` automatically extracts a 16-color palette from your wallpaper and
 generates theme files in `~/.config/randpaper/themes/`.
 
