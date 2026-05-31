@@ -306,10 +306,9 @@ $mod+Shift+t exec kitty -o allow_remote_control=yes --listen-on unix:/tmp/mykitt
 
 ---
 
-## 🫟 Waybar Dynamic Theming
-
+##  Waybar 
 <details>
-<summary> ✔️ Waybar Dynamic Theming </summary>
+<summary> ✔️ Waybar </summary>
 
 To use `randpaper` with a `waybar` setup, ensure you call the daemon via
 `exec waybar` in your Sway or Hyprland config.
@@ -333,6 +332,8 @@ wallpaper palette and writes it to:
 This file only defines color variables (it doesn't change your bar by itself).
 To use it, you import it from your Waybar `style.css` and then reference the
 variables in your existing rules.
+
+The theme will be applied on the next Waybar restart.
 
 Example of the generated `waybar.css` file:
 
@@ -377,18 +378,15 @@ window#waybar {
 
 - [Full `style.css` Example](https://github.com/saylesss88/.dotfiles/blob/main/waybar/.config/waybar/style.css)
 
-3. `randpaper` automatically reloads Waybar when it changes wallpapers, keeping
-   your bar perfectly themed without manual intervention. (`SIGUSR2`
-   zero-flicker reload)
-
 Obviously, the more hard-coded colors you replace with the dynamically generated
 CSS variables the more noticeable it will be.
 
-> NOTE: Just adding the `@import` at the top makes the variables available, you
+> [!NOTE]:
+> Just adding the `@import` at the top makes the variables available, you
 > need to reference them for the changes to be applied.
 
 - On NixOS, after cycling with one-shot run `pkill -USR2 waybar` to apply the
-  new theme.
+  new theme. (Causes a flicker)
 
 </details>
 
