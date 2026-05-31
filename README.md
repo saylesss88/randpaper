@@ -23,8 +23,11 @@ wallpaper.
   current wallpaper and generates config files for **Ghostty**, **Kitty**, and
   **Foot**, keeping your terminal in sync with your desktop.
   - 🫟 **Waybar Theming**: Generates CSS variables based on the image palette.
-    and reloads Waybar when it changes wallpapers applying the theming
-    automatically.
+
+> [!NOTE]
+> Waybar theming: Colors update on the next Waybar restart. Live reload
+> (`SIGUSR2`) causes all windows to briefly reflow due to Waybar unmapping
+> its layer surface. (Disabled by default now)
 
 - 🖥️ **Multi-Monitor**: Assigns a unique random image to every active output
   simultaneously.
