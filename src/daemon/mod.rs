@@ -27,7 +27,7 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
 
     // Parse the human-readable duration (e.g., "30m", "1h") into a Duration object
     let period: Duration =
-        parse_duration::parse(config.time.as_ref().expect("daemon mode requires --time"))
+        humantime::parse_duration(config.time.as_ref().expect("daemon mode requires --time"))
             .map_err(|e| anyhow::anyhow!("invalid duration: {e}"))?;
 
     // Initialize the chosen rendering engine (swaybg or awww)
