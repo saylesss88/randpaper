@@ -34,7 +34,8 @@ wallpaper.
 
 - 🛠️ **Modular Backends**: Works seamlessly with **Sway** ,**Hyprland**, and
 **MangoWM**)) (via
-  Sway IPC , `hyprctl`, or `mmsg`) and supports both `swaybg` and `awww` renderers.
+  Sway IPC , `hyprctl`, or `mmsg`) and supports both `swaybg`, `awww`, and
+  `native` renderers.
 
 - Support for both `awww` and `swww` for compatibility.
 
@@ -44,7 +45,10 @@ wallpaper.
 
 **Prerequisites**
 
-You need `swaybg` or (`awww` / `swww`) installed as the renderer.
+`swaybg` or (`awww` / `swww`) are no longer required, if you want a simple
+renderer that's built in, try `native`.
+
+If you want slick animations and more, choose `awww`.
 
 ```bash
 # From source
@@ -74,6 +78,19 @@ throw the options in a `config.toml` and simplify the `exec` greatly.
 
 ---
 
+
+## Native Renderer
+
+randpaper includes a built-in Wayland wallpaper renderer written in Rust using
+`smithay-client-toolkit` and `wayland-client` (no `swww` or `swaybg` required).
+
+It creates a `zwlr_layer_shell_v1` surface at the background layer and renders
+directly via shared memory (`wl_shm`), one surface per monitor.
+
+> [!NOTE]
+> The native renderer is a WIP. It's functional but bare bones — no transitions,
+> no animation. Use `--renderer native` to opt in.
+
 ## 📚️ Configuration (Optional)
 
 Config file (XDG):
@@ -85,7 +102,7 @@ Example:
 ```toml
 wallpaper_dir = "/home/user/Pictures/wallpapers"
 backend = "sway"        # "sway" | "hyprland" | "mango"
-renderer = "awww"       # "swaybg" | "awww"
+renderer = "awww"       # "swaybg" | "awww" | "native"
 time = "30m"            # used only in daemon mode
 
 transition_type = "wipe"
@@ -95,7 +112,7 @@ transition_fps = 60
 # outputs = ["DP-1", "HDMI-A-1"]
 ```
 
-Precidence:
+Precedence:
 
 - CLI args override `config.toml`.
 
@@ -122,7 +139,9 @@ Precidence:
 - `--transition-type`: Choose between (`simple`, `fade`, `wipe`, `outer`,
   `inner`, `random`)
 
-> NOTE: All transition options are ignored when using `--renderer swaybg`.
+> [!NOTE]:
+> All transition options are ignored when using `--renderer swaybg` and
+`--renderer native`
 
 ---
 

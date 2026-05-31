@@ -74,7 +74,10 @@ impl Renderer {
                 awww::apply(config, cache, monitors, bin).await
             }
 
-            RendererType::Native => native::apply(cache, monitors, &mut self.native_handles).await,
+            RendererType::Native => {
+                native::apply(cache, monitors, &mut self.native_handles);
+                Ok(())
+            }
         }
     }
 }

@@ -123,18 +123,21 @@ impl WallpaperState {
         self.layer = Some(layer);
     }
 
-    fn draw(&mut self, qh: &QueueHandle<Self>) {
+    fn draw(&mut self, qh: &QueueHandle<Self>) -> Result<(), Box<dyn std::error::Error>> {
         let Some(ref layer) = self.layer else {
-            return;
+            return Ok(());
         };
 
         let width = self.width;
         let height = self.height;
         let stride = width.cast_signed() * 4;
 
-        let needed = stride as usize * height as usize;
+        let needed = (stride.cast_unsigned() as usize)
+            .checked_mul(height as usize)
+            .ok_or_else(|| String::from("Calculation overflowed standard memory limits"))?;
+
         if self.pool.len() < needed {
-            self.pool.resize(needed).expect("pool resize");
+            self.pool.resize(needed)?;
         }
 
         let (buffer, canvas) = self
@@ -170,6 +173,9 @@ impl WallpaperState {
 
         // Request a callback for the next frame so Wayland doesn't starve.
         layer.wl_surface().frame(qh, layer.wl_surface().clone());
+
+        // Finish the function successfully
+        Ok(())
     }
 }
 
@@ -272,7 +278,9 @@ impl LayerShellHandler for WallpaperState {
         self.height = NonZeroU32::new(configure.new_size.1).map_or(1080, NonZeroU32::get);
         if self.first_configure {
             self.first_configure = false;
-            self.draw(qh);
+            if let Err(e) = self.draw(qh) {
+                eprintln!("Failed to draw wallpeper: {e}");
+            }
         }
     }
 }
