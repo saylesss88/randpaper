@@ -3,6 +3,7 @@ mod backends;
 mod cli;
 mod daemon;
 mod daemon_lock;
+mod layer;
 mod theme;
 mod traits;
 mod wallpaper;
