@@ -98,6 +98,21 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
                     .with_context(|| format!("oneshot: awww img -o {monitor}"))?;
             }
         }
+
+        RendererType::Native => {
+            // Spawn one thread per monitor so they run concurrently.
+            let mut handles = Vec::new();
+            for monitor in monitors {
+                let img_path = cache.pick_random().to_path_buf();
+                handles.push(std::thread::spawn(move || {
+                    crate::layer::render_wallpaper(&img_path, Some(&monitor))
+                        .expect("native renderer failed");
+                }));
+            }
+            for h in handles {
+                h.join().ok();
+            }
+        }
     }
 
     log::info!("Wallpaper and theme updated. Exiting.");

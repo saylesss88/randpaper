@@ -1,8 +1,10 @@
 use crate::cli::{Config, RendererType};
 use crate::wallpaper::WallpaperCache;
 use tokio::process::Child;
+use tokio::task::JoinHandle;
 
 pub mod awww;
+pub mod native;
 mod swaybg;
 
 /// Manages the lifecycle and execution of wallpaper rendering backends.
@@ -15,6 +17,8 @@ pub struct Renderer {
     swaybg_child: Option<Child>,
     /// The path to the detected `awww` binary.
     awww_bin: Option<String>,
+    /// Handles for the per-monitor native renderer threads.
+    native_handles: Vec<JoinHandle<()>>,
 }
 
 impl Renderer {
@@ -34,11 +38,12 @@ impl Renderer {
                 awww::ensure_awww_daemon(&bin).await?;
                 Some(bin)
             }
-            RendererType::Swaybg => None,
+            RendererType::Swaybg | RendererType::Native => None,
         };
         Ok(Self {
             swaybg_child: None,
             awww_bin,
+            native_handles: Vec::new(),
         })
     }
 
@@ -68,6 +73,8 @@ impl Renderer {
                 let bin = self.awww_bin.as_deref().expect("Renderer::new sets this");
                 awww::apply(config, cache, monitors, bin).await
             }
+
+            RendererType::Native => native::apply(cache, monitors, &mut self.native_handles).await,
         }
     }
 }

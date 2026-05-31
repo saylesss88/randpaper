@@ -1,0 +1,40 @@
+use crate::wallpaper::WallpaperCache;
+use std::path::PathBuf;
+use tokio::task::JoinHandle;
+
+/// Applies wallpapers using the built-in native Wayland renderer.
+///
+/// Each monitor gets its own `spawn_blocking` thread running the Wayland
+/// event loop for that surface. When called again (rotation), the old
+/// handles are aborted before new ones are spawned.
+///
+/// # Errors
+/// Returns an error if no valid image paths can be resolved.
+pub async fn apply(
+    cache: &WallpaperCache,
+    monitors: &[String],
+    current_handles: &mut Vec<JoinHandle<()>>,
+) -> anyhow::Result<()> {
+    // Abort the old per-monitor event loops before spawning new ones.
+    for handle in current_handles.drain(..) {
+        handle.abort();
+    }
+
+    for monitor in monitors {
+        let img_path: PathBuf = cache
+            .pick_random()
+            .canonicalize()
+            .unwrap_or_else(|_| cache.pick_random().to_path_buf());
+        let monitor_name = monitor.clone();
+
+        let handle = tokio::task::spawn_blocking(move || {
+            if let Err(e) = crate::layer::render_wallpaper(&img_path, Some(&monitor_name)) {
+                log::error!("native renderer error on {monitor_name}: {e:#}");
+            }
+        });
+
+        current_handles.push(handle);
+    }
+
+    Ok(())
+}
