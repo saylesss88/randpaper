@@ -95,6 +95,7 @@ pub enum RendererType {
     #[clap(alias = "swww")]
     #[serde(alias = "swww")]
     Awww,
+    Native,
 }
 
 /// The final configuration used by the application
