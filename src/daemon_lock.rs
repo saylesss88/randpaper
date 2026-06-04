@@ -47,7 +47,7 @@ fn session_key() -> String {
 }
 
 fn lock_path() -> anyhow::Result<PathBuf> {
-    // Best for “per login session” behavior (Wayland compositors normally set this). [web:30]
+    // Best for “per login session” behavior (Wayland compositors normally set this).
     let runtime =
         env::var_os("XDG_RUNTIME_DIR").ok_or_else(|| anyhow::anyhow!("XDG_RUNTIME_DIR not set"))?;
     let runtime = PathBuf::from(runtime);
