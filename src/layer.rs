@@ -205,7 +205,7 @@ impl CompositorHandler for WallpaperState {
         _surface: &wl_surface::WlSurface,
         _time: u32,
     ) {
-        // Static wallpaper — only redraw if something changed (e.g. resize).
+        // Static wallpaper: only redraw if something changed (e.g. resize).
         // Keeping this as a no-op avoids burning CPU on every vsync.
         let _ = qh;
     }
