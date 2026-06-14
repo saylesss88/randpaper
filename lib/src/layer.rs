@@ -1,3 +1,4 @@
+use crate::errors::RenderError;
 use image::{DynamicImage, imageops::FilterType};
 use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState},
@@ -31,7 +32,7 @@ use wayland_client::{
 /// # Errors
 /// Returns an error if the Wayland connection fails, the image cannot be
 /// decoded, or a required protocol is unavailable.
-pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> anyhow::Result<()> {
+pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> Result<(), RenderError> {
     let conn = Connection::connect_to_env()?;
     // registry_queue_init is generic over the dispatch state — Rust infers
     // WallpaperState here because every .bind() / OutputState::new call below
@@ -41,9 +42,11 @@ pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> anyhow:
 
     // Bind the three globals we need. All delegate macros for these are on
     // WallpaperState, so the qh type is correctly inferred.
-    let compositor = CompositorState::bind(&globals, &qh).map_err(|e| anyhow::anyhow!("{e:?}"))?;
-    let layer_shell = LayerShell::bind(&globals, &qh).map_err(|e| anyhow::anyhow!("{e:?}"))?;
-    let shm = Shm::bind(&globals, &qh).map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    let compositor =
+        CompositorState::bind(&globals, &qh).map_err(|e| RenderError::Wayland(format!("{e:?}")))?;
+    let layer_shell =
+        LayerShell::bind(&globals, &qh).map_err(|e| RenderError::Wayland(format!("{e:?}")))?;
+    let shm = Shm::bind(&globals, &qh).map_err(|e| RenderError::Wayland(format!("{e:?}")))?;
 
     // Decode the image before entering the event loop.
     let image = image::open(image_path)?;
@@ -123,7 +126,7 @@ impl WallpaperState {
         self.layer = Some(layer);
     }
 
-    fn draw(&mut self, qh: &QueueHandle<Self>) -> Result<(), Box<dyn std::error::Error>> {
+    fn draw(&mut self, qh: &QueueHandle<Self>) -> Result<(), Option<RenderError>> {
         let Some(ref layer) = self.layer else {
             return Ok(());
         };

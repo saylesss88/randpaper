@@ -938,9 +938,9 @@ dependencies = [
 name = "randpaper_lib"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "image",
  "smithay-client-toolkit",
+ "thiserror",
  "wayland-client",
 ]
 
