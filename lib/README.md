@@ -50,6 +50,7 @@ fn main() -> Result<(), randpaper_lib::errors::RenderError> {
 pub fn render_wallpaper(
     image_path: &Path,
     output_name: Option<&str>,
+    stop: Arc<AtomicBool>,
 ) -> Result<(), RenderError>
 ```
 
@@ -57,9 +58,43 @@ pub fn render_wallpaper(
 | :------------ | :------------------------------------------------------------------------------------------------- |
 | `image_path`  | Path to the image file. Supported formats: JPEG, PNG, BMP, WebP.                                   |
 | `output_name` | Connector name to target (e.g. `"eDP-1"`, `"HDMI-A-1"`). Pass `None` to let the compositor choose. |
+| `stop`        | Shared flag. Set to `true` to cleanly exit the event loop on the next dispatch cycle.              |
 
-Blocks indefinitely in the Wayland event loop — intended to be run in a
-dedicated thread or process per output.
+Blocks in the Wayland event loop until `stop` is set to `true` or a dispatch
+error occurs.
+
+## Stopping the renderer
+
+`render_wallpaper` accepts an `Arc<AtomicBool>` stop flag. Set it to `true` from
+any thread to cleanly unblock the call on the next event loop iteration.
+
+```rust
+use randpaper_lib::layer::render_wallpaper;
+use std::{
+    path::Path,
+    sync::{Arc, atomic::{AtomicBool, Ordering}},
+    thread,
+    time::Duration,
+};
+
+fn main() -> Result<(), randpaper_lib::errors::RenderError> {
+    let stop = Arc::new(AtomicBool::new(false));
+    let stop_tx = Arc::clone(&stop);
+
+    // Stop after 30 seconds
+    thread::spawn(move || {
+        thread::sleep(Duration::from_secs(30));
+        stop_tx.store(true, Ordering::Relaxed);
+    });
+
+    render_wallpaper(Path::new("/path/to/image.jpg"), Some("eDP-1"), stop)?;
+    Ok(())
+}
+```
+
+The flag is checked at the top of every event loop iteration, so the actual stop
+latency is bounded by one `blocking_dispatch` round-trip, typically
+sub-millisecond.
 
 ### `RenderError`
 
