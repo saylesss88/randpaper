@@ -51,7 +51,7 @@ pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> Result<
     // Decode the image before entering the event loop.
     let image = image::open(image_path)?;
 
-    let pool = SlotPool::new(1920 * 1080 * 4, &shm)?;
+    // let pool = SlotPool::new(1920 * 1080 * 4, &shm)?;
 
     let mut state = WallpaperState {
         registry_state: RegistryState::new(&globals),
@@ -59,7 +59,7 @@ pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> Result<
         compositor,
         layer_shell,
         shm,
-        pool,
+        pool: None,
         layer: None,
         image,
         width: 1920,
@@ -94,7 +94,8 @@ struct WallpaperState {
     compositor: CompositorState,
     layer_shell: LayerShell,
     shm: Shm,
-    pool: SlotPool,
+    pool: Option<SlotPool>,
+    // pool: SlotPool,
     layer: Option<LayerSurface>,
     image: DynamicImage,
     width: u32,
@@ -139,14 +140,18 @@ impl WallpaperState {
 
         let needed = (stride.cast_unsigned() as usize)
             .checked_mul(height as usize)
-            .ok_or(RenderError::Overflow)?; // new Overflow variant, see below
+            .ok_or(RenderError::Overflow)?;
 
-        if self.pool.len() < needed {
-            self.pool.resize(needed)?; // io::Error → RenderError::Io via #[from]
+        let pool = self
+            .pool
+            .as_mut()
+            .ok_or_else(|| RenderError::Wayland("pool not initialized".into()))?;
+
+        if pool.len() < needed {
+            pool.resize(needed)?;
         }
 
-        let (buffer, canvas) = self
-            .pool
+        let (buffer, canvas) = pool
             .create_buffer(
                 width.cast_signed(),
                 height.cast_signed(),
@@ -243,6 +248,13 @@ impl OutputHandler for WallpaperState {
         qh: &QueueHandle<Self>,
         output: wl_output::WlOutput,
     ) {
+        if let Some(info) = self.output_state.info(&output)
+            && let Some(mode) = info.modes.iter().find(|m| m.current)
+        {
+            self.width = mode.dimensions.0.cast_unsigned();
+            self.height = mode.dimensions.1.cast_unsigned();
+        }
+
         // If a specific output was requested and this is it, pin the surface to it.
         if let Some(ref target) = self.target_output.clone()
             && let Some(info) = self.output_state.info(&output)
@@ -281,6 +293,21 @@ impl LayerShellHandler for WallpaperState {
     ) {
         self.width = NonZeroU32::new(configure.new_size.0).map_or(1920, NonZeroU32::get);
         self.height = NonZeroU32::new(configure.new_size.1).map_or(1080, NonZeroU32::get);
+
+        let needed = self.width as usize * self.height as usize * 4;
+        match &mut self.pool {
+            Some(pool) if pool.len() < needed => {
+                let _ = pool.resize(needed);
+            }
+            None => match SlotPool::new(needed, &self.shm) {
+                Ok(pool) => self.pool = Some(pool),
+                Err(e) => {
+                    self.draw_error = Some(RenderError::from(e));
+                    return;
+                }
+            },
+            _ => {}
+        }
         if self.first_configure {
             self.first_configure = false;
             if let Err(e) = self.draw(qh) {
