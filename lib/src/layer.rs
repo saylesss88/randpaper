@@ -34,7 +34,7 @@ use wayland_client::{
 /// decoded, or a required protocol is unavailable.
 pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> Result<(), RenderError> {
     let conn = Connection::connect_to_env()?;
-    // registry_queue_init is generic over the dispatch state — Rust infers
+    // registry_queue_init is generic over the dispatch state Rust infers
     // WallpaperState here because every .bind() / OutputState::new call below
     // constrains the queue handle type to WallpaperState.
     let (globals, mut event_queue) = registry_queue_init(&conn)?;
@@ -66,6 +66,7 @@ pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> Result<
         height: 1080,
         first_configure: true,
         target_output: output_name.map(str::to_owned),
+        draw_error: None,
     };
 
     // One roundtrip so that OutputState is populated and new_output() fires
@@ -101,6 +102,7 @@ struct WallpaperState {
     first_configure: bool,
     /// Connector name we want to render on, e.g. "eDP-1".
     target_output: Option<String>,
+    draw_error: Option<RenderError>,
 }
 
 impl WallpaperState {
@@ -126,7 +128,7 @@ impl WallpaperState {
         self.layer = Some(layer);
     }
 
-    fn draw(&mut self, qh: &QueueHandle<Self>) -> Result<(), Option<RenderError>> {
+    fn draw(&mut self, qh: &QueueHandle<Self>) -> Result<(), RenderError> {
         let Some(ref layer) = self.layer else {
             return Ok(());
         };
@@ -137,10 +139,10 @@ impl WallpaperState {
 
         let needed = (stride.cast_unsigned() as usize)
             .checked_mul(height as usize)
-            .ok_or_else(|| String::from("Calculation overflowed standard memory limits"))?;
+            .ok_or(RenderError::Overflow)?; // new Overflow variant, see below
 
         if self.pool.len() < needed {
-            self.pool.resize(needed)?;
+            self.pool.resize(needed)?; // io::Error → RenderError::Io via #[from]
         }
 
         let (buffer, canvas) = self
@@ -151,7 +153,7 @@ impl WallpaperState {
                 stride,
                 wl_shm::Format::Xrgb8888,
             )
-            .expect("create buffer");
+            .map_err(|e| RenderError::Wayland(format!("{e:?}")))?;
 
         // Scale to fill (cover mode), then blit RGBA → BGRX.
         let scaled = self
@@ -282,7 +284,7 @@ impl LayerShellHandler for WallpaperState {
         if self.first_configure {
             self.first_configure = false;
             if let Err(e) = self.draw(qh) {
-                eprintln!("Failed to draw wallpeper: {e}");
+                self.draw_error = Some(e);
             }
         }
     }

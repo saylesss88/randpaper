@@ -33,4 +33,7 @@ pub enum RenderError {
     /// (e.g. `BindError` from `CompositorState::bind` / `LayerShell::bind`).
     #[error("Wayland error: {0}")]
     Wayland(String),
+
+    #[error("Integer overflow in buffer size calculation")]
+    Overflow,
 }
