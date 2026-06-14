@@ -1,10 +1,9 @@
 [workspace]
 members = ["lib", "cli"]
-# default-members = ["lib", "cli"]
+default-members = ["lib", "cli"]
 resolver = "3"
 
 [workspace.package]
-name = "randpaper"
 version = "0.3.1"
 edition = "2024"
 description = "A customizable wallpaper daemon for per-monitor cycling, one-shot application, and optional theme synchronization for Waybar and terminals."
@@ -30,7 +29,6 @@ exclude = [
 	"package-lock.json",
 	"package.json",
 ]
-resolver = "3"
 
 [workspace.dependencies]
 anyhow = "1.0.102"
