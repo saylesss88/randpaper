@@ -15,7 +15,9 @@ use smithay_client_toolkit::{
     },
     shm::{Shm, ShmHandler, slot::SlotPool},
 };
-use std::{num::NonZeroU32, path::Path};
+use std::{
+    num::NonZeroU32, path::Path, sync::Arc, sync::atomic::AtomicBool, sync::atomic::Ordering,
+};
 use wayland_client::{
     Connection, QueueHandle,
     globals::registry_queue_init,
@@ -32,7 +34,11 @@ use wayland_client::{
 /// # Errors
 /// Returns an error if the Wayland connection fails, the image cannot be
 /// decoded, or a required protocol is unavailable.
-pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> Result<(), RenderError> {
+pub fn render_wallpaper(
+    image_path: &Path,
+    output_name: Option<&str>,
+    stop: Arc<AtomicBool>,
+) -> Result<(), RenderError> {
     let conn = Connection::connect_to_env()?;
     // registry_queue_init is generic over the dispatch state Rust infers
     // WallpaperState here because every .bind() / OutputState::new call below
@@ -51,8 +57,6 @@ pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> Result<
     // Decode the image before entering the event loop.
     let image = image::open(image_path)?;
 
-    // let pool = SlotPool::new(1920 * 1080 * 4, &shm)?;
-
     let mut state = WallpaperState {
         registry_state: RegistryState::new(&globals),
         output_state: OutputState::new(&globals, &qh),
@@ -62,8 +66,8 @@ pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> Result<
         pool: None,
         layer: None,
         image,
-        width: 1920,
-        height: 1080,
+        width: 0,
+        height: 0,
         first_configure: true,
         target_output: output_name.map(str::to_owned),
         draw_error: None,
@@ -81,6 +85,9 @@ pub fn render_wallpaper(image_path: &Path, output_name: Option<&str>) -> Result<
     }
 
     loop {
+        if stop.load(Ordering::Relaxed) {
+            return Ok(());
+        }
         event_queue.blocking_dispatch(&mut state)?;
     }
 }
