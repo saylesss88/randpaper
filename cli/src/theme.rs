@@ -120,13 +120,6 @@ fn atomic_write(path: &Path, contents: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Sends a SIGUSR2 signal to all running Waybar instances to trigger a CSS reload.
-// fn reload_waybar_only() {
-//     let _ = Command::new("pkill")
-//         .args(["-USR2", "-x", "waybar"])
-//         .status();
-// }
-
 /// Generates a CSS file for Waybar containing @define-color variables
 /// based on the extracted palette.
 pub fn write_waybar_css(
