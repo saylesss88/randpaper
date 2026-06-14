@@ -1,9 +1,15 @@
-[package]
+[workspace]
+members = ["lib", "cli"]
+# default-members = ["lib", "cli"]
+resolver = "3"
+
+[workspace.package]
 name = "randpaper"
 version = "0.3.1"
 edition = "2024"
 description = "A customizable wallpaper daemon for per-monitor cycling, one-shot application, and optional theme synchronization for Waybar and terminals."
 readme = "README.md"
+authors = ["T. Sawyer <saylesss87@proton.me>"]
 license = "Apache-2.0"
 repository = "https://github.com/saylesss88/randpaper"
 homepage = "https://github.com/saylesss88/randpaper"
@@ -26,7 +32,7 @@ exclude = [
 ]
 resolver = "3"
 
-[dependencies]
+[workspace.dependencies]
 anyhow = "1.0.101"
 async-trait = "0.1.89"
 clap = {version = "4.5.57", features = ["derive"]}
@@ -52,17 +58,18 @@ tokio = {version = "1.49.0", features = ["full"]}
 walkdir = "2.5.0"
 wayland-client = "0.31.14"
 xdg = "3.0.0"
+randpaper_lib = {path = "lib", version = "0.1.0"}
 
-[lints.rust]
+[workspace.lints.rust]
 unsafe_code = "forbid"
 future_incompatible = {level = "warn", priority = -1}
 nonstandard_style = {level = "warn", priority = -1}
 rust_2018_idioms = {level = "warn", priority = -1}
 
-[lints.rustdoc]
+[workspace.lints.rustdoc]
 all = "warn"
 
-[lints.clippy]
+[workspace.lints.clippy]
 all = {level = "warn", priority = -1}
 pedantic = {level = "warn", priority = -1}
 nursery = {level = "warn", priority = -1}

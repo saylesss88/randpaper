@@ -923,6 +923,7 @@ dependencies = [
  "image",
  "log",
  "rand",
+ "randpaper_lib",
  "serde",
  "serde_json",
  "smithay-client-toolkit",
@@ -931,6 +932,16 @@ dependencies = [
  "walkdir",
  "wayland-client",
  "xdg",
+]
+
+[[package]]
+name = "randpaper_lib"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "image",
+ "smithay-client-toolkit",
+ "wayland-client",
 ]
 
 [[package]]

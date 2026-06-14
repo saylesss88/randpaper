@@ -1,0 +1,35 @@
+[package]
+name = "randpaper"
+default-run = "randpaper"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "randpaper"
+path = "src/main.rs"
+
+[dependencies]
+randpaper_lib.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+clap.workspace = true
+color-thief.workspace = true
+dirs.workspace = true
+env_logger.workspace = true
+figment.workspace = true
+fslock.workspace = true
+humantime.workspace = true
+image.workspace = true
+log.workspace = true
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+smithay-client-toolkit.workspace = true
+swayipc-async.workspace = true
+tokio.workspace = true
+walkdir.workspace = true
+wayland-client.workspace = true
+xdg.workspace = true

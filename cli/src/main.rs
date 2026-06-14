@@ -3,7 +3,6 @@ mod backends;
 mod cli;
 mod daemon;
 mod daemon_lock;
-mod layer;
 mod theme;
 mod traits;
 mod wallpaper;
@@ -13,6 +12,7 @@ use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
 use anyhow::Context;
 use cli::{BackendType, Config, RendererType};
+use randpaper_lib::layer;
 use tokio::process::Command;
 
 /// Executes a single wallpaper and theme update.
