@@ -13,6 +13,7 @@ use crate::wallpaper::WallpaperCache;
 use anyhow::Context;
 use cli::{BackendType, Config, RendererType};
 use randpaper_lib::layer;
+use std::sync::{Arc, atomic::AtomicBool};
 use tokio::process::Command;
 
 /// Executes a single wallpaper and theme update.
@@ -105,8 +106,12 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
             for monitor in monitors {
                 let img_path = cache.pick_random().to_path_buf();
                 handles.push(std::thread::spawn(move || {
-                    crate::layer::render_wallpaper(&img_path, Some(&monitor))
-                        .expect("native renderer failed");
+                    crate::layer::render_wallpaper(
+                        &img_path,
+                        Some(&monitor),
+                        &Arc::new(AtomicBool::new(false)),
+                    )
+                    .expect("native renderer failed");
                 }));
             }
             for h in handles {

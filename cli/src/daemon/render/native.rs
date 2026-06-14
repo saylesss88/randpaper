@@ -1,4 +1,5 @@
 use crate::wallpaper::WallpaperCache;
+use std::sync::{Arc, atomic::AtomicBool};
 
 /// Applies wallpapers using the built-in native Wayland renderer.
 ///
@@ -23,7 +24,11 @@ pub fn apply(
             .unwrap_or_else(|_| cache.pick_random().to_path_buf());
         let monitor_name = monitor.clone();
         let handle = tokio::task::spawn_blocking(move || {
-            if let Err(e) = crate::layer::render_wallpaper(&img_path, Some(&monitor_name)) {
+            if let Err(e) = crate::layer::render_wallpaper(
+                &img_path,
+                Some(&monitor_name),
+                &Arc::new(AtomicBool::new(false)),
+            ) {
                 log::error!("native renderer error on {monitor_name}: {e:#}");
             }
         });

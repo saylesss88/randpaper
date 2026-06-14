@@ -37,7 +37,7 @@ use wayland_client::{
 pub fn render_wallpaper(
     image_path: &Path,
     output_name: Option<&str>,
-    stop: Arc<AtomicBool>,
+    stop: &Arc<AtomicBool>,
 ) -> Result<(), RenderError> {
     let conn = Connection::connect_to_env()?;
     // registry_queue_init is generic over the dispatch state Rust infers
