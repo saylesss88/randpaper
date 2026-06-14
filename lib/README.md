@@ -24,7 +24,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-randpaper_lib = { git = "https://github.com/saylesss88/randpaper" }
+randpaper_lib = "0.1.0"
 ```
 
 ```rust
