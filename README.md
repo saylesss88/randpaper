@@ -82,8 +82,9 @@ randpaper --renderer awww --transition-type wipe --transition-step 90 --transiti
 Once you find what you like, either add an `exec` to the chosen command, or
 throw the options in a `config.toml` and simplify the `exec` greatly.
 
-> NOTE: It’s safe to use `exec_always` with `randpaper --daemon`; extra starts
-> exit cleanly if an instance is already running. (Same with from the CLI)
+> [!NOTE]:
+> It’s safe to use `exec_always` with `randpaper --daemon`; extra starts exit
+> cleanly if an instance is already running. (Same with from the CLI)
 
 ---
 
@@ -114,6 +115,7 @@ backend = "sway"        # "sway" | "hyprland" | "mango"
 renderer = "awww"       # "swaybg" | "awww" | "native"
 time = "30m"            # used only in daemon mode
 
+# The following only work with awww/swww
 transition_type = "wipe"
 transition_step = 90
 transition_fps = 60
@@ -245,8 +247,31 @@ pkill -USR1 randpaper
 ```
 
 > [!NOTE]
-> Using `pkill` can be hit or miss. `--daemon` mode is more meant for you to
-> set it and forget it.
+> Using `pkill` can be hit or miss. Try the new IPC when using the daemon.
+
+## Randpaper IPC
+
+
+## IPC
+
+`randpaper` exposes a Unix socket for runtime control. The socket is created
+at `$XDG_RUNTIME_DIR/randpaper/randpaper-<session>.sock` on daemon startup.
+
+Commands are sent via `randpaper` subcommands:
+
+| Command  | Effect                              |
+|----------|-------------------------------------|
+| `randpaper next`   | Cycle to the next wallpaper immediately |
+| `randpaper pause`  | Pause automatic cycling             |
+| `randpaper resume` | Resume automatic cycling            |
+| `randpaper status` | Print current daemon state          |
+
+The socket is cleaned up and re-created on each daemon start, so stale
+sockets from a previous session are handled automatically.
+
+> [!IMPORTANT]
+> On sway I had to change the exec command to ensure multiple instances of
+> randpaper weren't created. `exec pgrep -x randpaper || randpaper --daemon`
 
 ---
 
