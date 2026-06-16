@@ -30,7 +30,7 @@ pub fn find_socket() -> Result<PathBuf, BaseDirectoriesError> {
     Ok(xdg_dirs
         .get_runtime_directory()?
         .join("randpaper")
-        .join(format!("randpaper-{}.lock", session_key())))
+        .join(format!("randpaper-{}.sock", session_key())))
 }
 
 // pub fn find_socket() -> Result<PathBuf, BaseDirectoriesError> {

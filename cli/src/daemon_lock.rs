@@ -1,8 +1,5 @@
 use fslock::LockFile;
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-};
+use std::{env, fs, path::PathBuf};
 
 fn sanitize_component(s: &str) -> String {
     // Keep it ASCII and filesystem-friendly.
@@ -22,21 +19,13 @@ fn truncate_ascii(mut s: String, max_len: usize) -> String {
     s
 }
 
-fn sway_sock_basename(sock: &str) -> &str {
-    Path::new(sock)
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or("sway")
-}
-
 pub fn session_key() -> String {
     if let Ok(sig) = env::var("HYPRLAND_INSTANCE_SIGNATURE") {
         return truncate_ascii(format!("hypr-{}", sanitize_component(&sig)), 80);
     }
 
-    if let Ok(sock) = env::var("SWAYSOCK") {
-        let base = sway_sock_basename(&sock);
-        return truncate_ascii(format!("sway-{}", sanitize_component(base)), 80);
+    if env::var("SWAYSOCK").is_ok() {
+        return "sway".to_string();
     }
 
     if let Ok(disp) = env::var("WAYLAND_DISPLAY") {
