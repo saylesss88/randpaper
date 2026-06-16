@@ -1,85 +1,19 @@
 use crate::cli::Config;
-use crate::daemon_lock::session_key;
+use crate::daemon::ipc::{DaemonCommand, DaemonState};
 use crate::theme::update_theme_file;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
 
-use std::path::PathBuf;
 use std::time::Duration;
 use tokio::signal::unix::{SignalKind, signal};
 use tokio::time::sleep;
 
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::UnixListener;
-use tokio::sync::mpsc;
-
-#[derive(Debug)]
-pub enum DaemonCommand {
-    Next,
-    Pause,
-    Resume,
-    Status(tokio::sync::oneshot::Sender<String>),
-}
-
-struct DaemonState {
-    paused: bool,
-}
-
-pub fn find_socket() -> Result<PathBuf, BaseDirectoriesError> {
-    let xdg_dirs = BaseDirectories::with_prefix("randpaper");
-    Ok(xdg_dirs
-        .get_runtime_directory()?
-        .join("randpaper")
-        .join(format!("randpaper-{}.sock", session_key())))
-}
-
-// pub fn find_socket() -> Result<PathBuf, BaseDirectoriesError> {
-//     let xdg_dirs = BaseDirectories::with_prefix("randpaper");
-//     Ok(xdg_dirs.get_runtime_directory()?.join("randpaper.sock"))
-// }
-
-async fn listen_for_ipc(tx: mpsc::Sender<DaemonCommand>) -> anyhow::Result<()> {
-    let socket_path = find_socket()?;
-    let _ = std::fs::remove_file(&socket_path); // clean up stale socket
-    let listener = UnixListener::bind(socket_path)?;
-
-    loop {
-        let (mut stream, _) = listener.accept().await?;
-        let mut buf = [0u8; 64];
-        let n = stream.read(&mut buf).await?;
-        if n == 0 {
-            continue;
-        }
-        let cmd = std::str::from_utf8(&buf[..n])?.trim();
-        match cmd {
-            "next" => {
-                let _ = tx.send(DaemonCommand::Next).await;
-            }
-            "pause" => {
-                let _ = tx.send(DaemonCommand::Pause).await;
-            }
-            "resume" => {
-                let _ = tx.send(DaemonCommand::Resume).await;
-            }
-            "status" => {
-                let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
-                let _ = tx.send(DaemonCommand::Status(reply_tx)).await;
-                if let Ok(reply) = reply_rx.await {
-                    stream.write_all(reply.as_bytes()).await?;
-                }
-            }
-            other => {
-                log::warn!("Unknown IPC command: {other}");
-            }
-        }
-    }
-}
+pub mod ipc;
 mod render;
 
-// Re-exporting for use in `oneshot_mode()` in `main.rs`
+// Re-exports
 pub use render::awww::detect_awww_binary;
 pub use render::awww::ensure_awww_daemon;
-use xdg::{BaseDirectories, BaseDirectoriesError};
 
 /// Runs the persistent background process that cycles wallpapers and themes.
 ///
@@ -96,7 +30,7 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
     let mut renderer = render::Renderer::new(&config).await?;
     let (cmd_tx, mut cmd_rx) = tokio::sync::mpsc::channel::<DaemonCommand>(8);
     tokio::spawn(async move {
-        if let Err(e) = listen_for_ipc(cmd_tx).await {
+        if let Err(e) = ipc::listen_for_ipc(cmd_tx).await {
             log::error!("IPC listener exited: {e:#}");
         }
     });
@@ -145,8 +79,6 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
                     DaemonCommand::Status(reply) => {
                         let msg = format!("running, paused={}", daemon_state.paused);
                         let _ = reply.send(msg);
-                        should_cycle = false;
-                        // should_cycle stays false
                     }
                 }
             }
