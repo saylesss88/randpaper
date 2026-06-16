@@ -96,6 +96,8 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
     // Set up a signal listener for SIGUSR1 (allows users to run `pkill -USR1 randpaper`)
     let mut sig_usr1 = signal(SignalKind::user_defined1())?;
 
+    let mut paused = false;
+
     loop {
         // Fetch active monitors; if the compositor is temporarily unreachable,
         // wait 5 seconds and retry rather than crashing the daemon.
@@ -111,8 +113,6 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
         // Select a random wallpaper and update system-wide theme colors
         let img = cache.pick_random();
         let _ = update_theme_file(img);
-
-        let mut paused = false;
 
         if !paused {
             let img = cache.pick_random();
