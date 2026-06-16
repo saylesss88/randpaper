@@ -9,6 +9,7 @@ mod wallpaper;
 
 use crate::backends::{hyprland::HyprlandBackend, mango::MangoBackend, sway::SwayBackend};
 use crate::daemon::ipc::find_socket;
+use crate::daemon::run_loop;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
 use anyhow::Context;
@@ -187,18 +188,18 @@ async fn main() -> anyhow::Result<()> {
     match config.backend {
         BackendType::Hyprland => {
             log::info!("Using Hyprland backend");
-            daemon::run_loop(config, HyprlandBackend).await?;
+            run_loop(config, HyprlandBackend).await?;
         }
         BackendType::Mango => {
             log::info!("Using MangoWM backend");
-            daemon::run_loop(config, MangoBackend).await?;
+            run_loop(config, MangoBackend).await?;
         }
         BackendType::Sway => {
             log::info!("Using Sway backend");
             let backend = SwayBackend {
                 outputs_override: config.outputs.clone(),
             };
-            daemon::run_loop(config, backend).await?;
+            run_loop(config, backend).await?;
         }
     }
 
