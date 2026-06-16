@@ -104,7 +104,11 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
 
     let (cmd_tx, mut cmd_rx) = tokio::sync::mpsc::channel::<DaemonCommand>(8);
 
-    tokio::spawn(listen_for_ipc(cmd_tx));
+    tokio::spawn(async move {
+        if let Err(e) = listen_for_ipc(cmd_tx).await {
+            log::error!("IPC listener exited: {e:#}");
+        }
+    });
 
     // Set up a signal listener for SIGUSR1 (allows users to run `pkill -USR1 randpaper`)
     let mut sig_usr1 = signal(SignalKind::user_defined1())?;

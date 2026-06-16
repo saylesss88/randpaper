@@ -27,12 +27,21 @@ pub async fn send_ipc_command(cmd: &str) -> anyhow::Result<()> {
     let mut stream = UnixStream::connect(&socket_path)
         .await
         .with_context(|| format!("Failed to connect to socket at {}", socket_path.display()))?;
-    stream
-        .write_all(cmd.as_bytes())
-        .await
-        .context("Failed to write command to IPC stream")?;
+    stream.write_all(cmd.as_bytes()).await?;
+    stream.shutdown().await?;
     Ok(())
 }
+// pub async fn send_ipc_command(cmd: &str) -> anyhow::Result<()> {
+//     let socket_path = daemon::find_socket().context("Failed to locate the daemon socket file")?;
+//     let mut stream = UnixStream::connect(&socket_path)
+//         .await
+//         .with_context(|| format!("Failed to connect to socket at {}", socket_path.display()))?;
+//     stream
+//         .write_all(cmd.as_bytes())
+//         .await
+//         .context("Failed to write command to IPC stream")?;
+//     Ok(())
+// }
 /// Executes a single wallpaper and theme update.
 ///
 /// This mode is triggered when the user does not provide a `--time` interval.
