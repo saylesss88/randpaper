@@ -115,6 +115,7 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
     let mut daemon_state = DaemonState { paused: false };
 
     loop {
+        log::debug!("TOP OF LOOP, paused={}", daemon_state.paused);
         if !daemon_state.paused {
             let monitors = match backend.get_active_monitors().await {
                 Ok(m) => m,
@@ -133,12 +134,14 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
         // The core wait logic:
         // Either wait for the full 'period' duration, OR
         // break out early if a SIGUSR1 is received.
+        let mut skip_cycle = false;
         tokio::select! {
                 () = sleep(period) => {}
                 _ = sig_usr1.recv() => {
                     log::info!("Received skip signal (SIGUSR1). Cycling wallpaper immediately.");
                 }
                 Some(cmd) = cmd_rx.recv() => {
+                    #[allow(clippy::needless_continue)]
                     match cmd {
                         DaemonCommand::Next => {
                             log::info!("IPC next wallpaper");
@@ -146,6 +149,7 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
                         DaemonCommand::Pause => {
                             log::info!("IPC pausing");
                             daemon_state.paused = true;
+                            skip_cycle = true;
                         }
                         DaemonCommand::Resume => {
                             log::info!("IPC resuming");
@@ -154,10 +158,14 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
         DaemonCommand::Status(reply) => {
             let msg = format!("running, paused={}",{daemon_state.paused});
             let _ = reply.send(msg);
+                            skip_cycle = true;
         }
 
                         }
                     }
                 }
+        if skip_cycle {
+            continue;
+        }
     }
 }

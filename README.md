@@ -218,7 +218,7 @@ Recommended autostart:
 
 ```text
 # With `config.toml`
-exec randpaper --daemon
+exec pgrep -x randpaper || randpaper --daemon
 # Or something like this without using the config:
 exec randpaper -w ~/Pictures/wallpapers -t 5m -r awww --daemon
 ```
