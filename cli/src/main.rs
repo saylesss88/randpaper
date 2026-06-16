@@ -15,7 +15,6 @@ use clap::Parser;
 use cli::{BackendType, Cli, Command, Config, RendererType};
 use randpaper_lib::layer;
 use std::sync::{Arc, atomic::AtomicBool};
-use tokio::io::AsyncWriteExt;
 use tokio::net::UnixStream;
 use tokio::process::Command as TokioCommand;
 
@@ -23,12 +22,24 @@ use tokio::process::Command as TokioCommand;
 ///
 /// Returns an error if it can't find the daemon socket
 pub async fn send_ipc_command(cmd: &str) -> anyhow::Result<()> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
     let socket_path = daemon::find_socket().context("Failed to locate the daemon socket file")?;
     let mut stream = UnixStream::connect(&socket_path)
         .await
         .with_context(|| format!("Failed to connect to socket at {}", socket_path.display()))?;
+
     stream.write_all(cmd.as_bytes()).await?;
     stream.shutdown().await?;
+
+    if cmd == "status" {
+        let mut reply = String::new();
+        stream.read_to_string(&mut reply).await?;
+        if !reply.trim().is_empty() {
+            println!("{reply}");
+        }
+    }
+
     Ok(())
 }
 // pub async fn send_ipc_command(cmd: &str) -> anyhow::Result<()> {

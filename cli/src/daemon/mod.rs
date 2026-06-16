@@ -45,20 +45,21 @@ async fn listen_for_ipc(tx: mpsc::Sender<DaemonCommand>) -> anyhow::Result<()> {
 
     loop {
         let (mut stream, _) = listener.accept().await?;
-        let mut buf = String::new();
-        stream.read_to_string(&mut buf).await?;
-        let _cmd = match buf.trim() {
+        let mut buf = [0u8; 64];
+        let n = stream.read(&mut buf).await?;
+        if n == 0 {
+            continue;
+        }
+        let cmd = std::str::from_utf8(&buf[..n])?.trim();
+        match cmd {
             "next" => {
                 let _ = tx.send(DaemonCommand::Next).await;
-                continue;
             }
             "pause" => {
                 let _ = tx.send(DaemonCommand::Pause).await;
-                continue;
             }
             "resume" => {
                 let _ = tx.send(DaemonCommand::Resume).await;
-                continue;
             }
             "status" => {
                 let (reply_tx, reply_rx) = tokio::sync::oneshot::channel();
@@ -66,13 +67,11 @@ async fn listen_for_ipc(tx: mpsc::Sender<DaemonCommand>) -> anyhow::Result<()> {
                 if let Ok(reply) = reply_rx.await {
                     stream.write_all(reply.as_bytes()).await?;
                 }
-                continue;
             }
             other => {
                 log::warn!("Unknown IPC command: {other}");
-                continue;
             }
-        };
+        }
     }
 }
 mod render;
