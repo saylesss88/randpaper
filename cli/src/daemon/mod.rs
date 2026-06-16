@@ -20,6 +20,10 @@ pub enum DaemonCommand {
     Status(tokio::sync::oneshot::Sender<String>),
 }
 
+struct DaemonState {
+    paused: bool,
+}
+
 pub fn find_socket() -> Result<PathBuf, BaseDirectoriesError> {
     let xdg_dirs = BaseDirectories::with_prefix("randpaper");
     Ok(xdg_dirs.get_runtime_directory()?.join("randpaper.sock"))
@@ -96,32 +100,23 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
     // Set up a signal listener for SIGUSR1 (allows users to run `pkill -USR1 randpaper`)
     let mut sig_usr1 = signal(SignalKind::user_defined1())?;
 
-    let mut paused = false;
+    let mut daemon_state = DaemonState { paused: false };
 
     loop {
-        // Fetch active monitors; if the compositor is temporarily unreachable,
-        // wait 5 seconds and retry rather than crashing the daemon.
-        let monitors = match backend.get_active_monitors().await {
-            Ok(m) => m,
-            Err(e) => {
-                log::error!("Failed to get monitors: {e}. Retrying in 5s...");
-                sleep(Duration::from_secs(5)).await;
-                continue;
-            }
-        };
+        if !daemon_state.paused {
+            let monitors = match backend.get_active_monitors().await {
+                Ok(m) => m,
+                Err(e) => {
+                    log::error!("Failed to get monitors: {e}. Retrying in 5s...");
+                    sleep(Duration::from_secs(5)).await;
+                    continue;
+                }
+            };
 
-        // Select a random wallpaper and update system-wide theme colors
-        let img = cache.pick_random();
-        let _ = update_theme_file(img);
-
-        if !paused {
             let img = cache.pick_random();
             let _ = update_theme_file(img);
             renderer.apply(&config, &cache, &monitors).await?;
         }
-
-        // Dispatch the wallpaper update to the specific renderer
-        renderer.apply(&config, &cache, &monitors).await?;
 
         // The core wait logic:
         // Either wait for the full 'period' duration, OR
@@ -135,17 +130,18 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
                     match cmd {
                         DaemonCommand::Next => {
                             log::info!("IPC next wallpaper");
+                            continue;
                         }
                         DaemonCommand::Pause => {
                             log::info!("IPC pausing");
-                            paused = true;
+                            daemon_state.paused = true;
                         }
                         DaemonCommand::Resume => {
                             log::info!("IPC resuming");
-                            paused = false;
+                            daemon_state.paused = false;
                         }
         DaemonCommand::Status(reply) => {
-            let msg = format!("running, paused={paused}");
+            let msg = format!("running, paused={}",{daemon_state.paused});
             let _ = reply.send(msg);
         }
 
