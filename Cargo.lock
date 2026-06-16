@@ -926,11 +926,9 @@ dependencies = [
  "randpaper_lib",
  "serde",
  "serde_json",
- "smithay-client-toolkit",
  "swayipc-async",
  "tokio",
  "walkdir",
- "wayland-client",
  "xdg",
 ]
 

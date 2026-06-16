@@ -16,5 +16,5 @@ path = "src/lib.rs"
 [dependencies]
 image.workspace = true
 smithay-client-toolkit.workspace = true
-thiserror = "2.0.18"
+thiserror = { version = "2.0.18", default-features = false }
 wayland-client.workspace = true
