@@ -29,7 +29,7 @@ fn sway_sock_basename(sock: &str) -> &str {
         .unwrap_or("sway")
 }
 
-fn session_key() -> String {
+pub fn session_key() -> String {
     if let Ok(sig) = env::var("HYPRLAND_INSTANCE_SIGNATURE") {
         return truncate_ascii(format!("hypr-{}", sanitize_component(&sig)), 80);
     }

@@ -1,4 +1,5 @@
 use crate::cli::Config;
+use crate::daemon_lock::session_key;
 use crate::theme::update_theme_file;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
@@ -26,8 +27,16 @@ struct DaemonState {
 
 pub fn find_socket() -> Result<PathBuf, BaseDirectoriesError> {
     let xdg_dirs = BaseDirectories::with_prefix("randpaper");
-    Ok(xdg_dirs.get_runtime_directory()?.join("randpaper.sock"))
+    Ok(xdg_dirs
+        .get_runtime_directory()?
+        .join("randpaper")
+        .join(format!("randpaper-{}.lock", session_key())))
 }
+
+// pub fn find_socket() -> Result<PathBuf, BaseDirectoriesError> {
+//     let xdg_dirs = BaseDirectories::with_prefix("randpaper");
+//     Ok(xdg_dirs.get_runtime_directory()?.join("randpaper.sock"))
+// }
 
 async fn listen_for_ipc(tx: mpsc::Sender<DaemonCommand>) -> anyhow::Result<()> {
     let socket_path = find_socket()?;
