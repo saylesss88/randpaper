@@ -1,37 +1,45 @@
 use crate::wallpaper::WallpaperCache;
-use std::sync::{Arc, atomic::AtomicBool};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 
-/// Applies wallpapers using the built-in native Wayland renderer.
-///
-/// Each monitor gets its own `spawn_blocking` thread running the Wayland
-/// event loop for that surface. When called again (rotation), the old
-/// handles are aborted before new ones are spawned.
-///
-/// # Errors
-/// Returns an error if no valid image paths can be resolved.
-pub fn apply(
-    cache: &WallpaperCache,
-    monitors: &[String],
-    current_handles: &mut Vec<tokio::task::JoinHandle<()>>,
-) {
-    for handle in current_handles.drain(..) {
-        handle.abort();
+pub struct NativeRenderer {
+    handles: Vec<tokio::task::JoinHandle<()>>,
+    stop_flags: Vec<Arc<AtomicBool>>,
+}
+
+impl NativeRenderer {
+    pub const fn new() -> Self {
+        Self {
+            handles: Vec::new(),
+            stop_flags: Vec::new(),
+        }
     }
-    for monitor in monitors {
-        let img_path = cache
-            .pick_random()
-            .canonicalize()
-            .unwrap_or_else(|_| cache.pick_random().to_path_buf());
-        let monitor_name = monitor.clone();
-        let handle = tokio::task::spawn_blocking(move || {
-            if let Err(e) = crate::layer::render_wallpaper(
-                &img_path,
-                Some(&monitor_name),
-                &Arc::new(AtomicBool::new(false)),
-            ) {
-                log::error!("native renderer error on {monitor_name}: {e:#}");
-            }
-        });
-        current_handles.push(handle);
+    pub fn apply(&mut self, cache: &WallpaperCache, monitors: &[String]) {
+        for flag in self.stop_flags.drain(..) {
+            flag.store(true, Ordering::Relaxed);
+        }
+        for handle in self.handles.drain(..) {
+            handle.abort();
+        }
+        for monitor in monitors {
+            let img_path = cache
+                .pick_random()
+                .canonicalize()
+                .unwrap_or_else(|_| cache.pick_random().to_path_buf());
+            let monitor_name = monitor.clone();
+            let stop = Arc::new(AtomicBool::new(false));
+            self.stop_flags.push(Arc::clone(&stop));
+
+            let handle = tokio::task::spawn_blocking(move || {
+                if let Err(e) =
+                    crate::layer::render_wallpaper(&img_path, Some(&monitor_name), &stop)
+                {
+                    log::error!("native renderer error on {monitor_name}: {e:#}");
+                }
+            });
+            self.handles.push(handle);
+        }
     }
 }

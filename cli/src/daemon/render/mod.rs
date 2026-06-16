@@ -1,7 +1,7 @@
 use crate::cli::{Config, RendererType};
+use crate::daemon::render::native::NativeRenderer;
 use crate::wallpaper::WallpaperCache;
 use tokio::process::Child;
-use tokio::task::JoinHandle;
 
 pub mod awww;
 pub mod native;
@@ -18,7 +18,7 @@ pub struct Renderer {
     /// The path to the detected `awww` binary.
     awww_bin: Option<String>,
     /// Handles for the per-monitor native renderer threads.
-    native_handles: Vec<JoinHandle<()>>,
+    native: NativeRenderer,
 }
 
 impl Renderer {
@@ -43,7 +43,7 @@ impl Renderer {
         Ok(Self {
             swaybg_child: None,
             awww_bin,
-            native_handles: Vec::new(),
+            native: NativeRenderer::new(),
         })
     }
 
@@ -75,7 +75,7 @@ impl Renderer {
             }
 
             RendererType::Native => {
-                native::apply(cache, monitors, &mut self.native_handles);
+                self.native.apply(cache, monitors);
                 Ok(())
             }
         }

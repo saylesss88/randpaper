@@ -130,7 +130,6 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
                     match cmd {
                         DaemonCommand::Next => {
                             log::info!("IPC next wallpaper");
-                            continue;
                         }
                         DaemonCommand::Pause => {
                             log::info!("IPC pausing");
