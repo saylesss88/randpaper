@@ -66,6 +66,10 @@ detects your monitors and see which transition you like with commands like:
 If you're on atomic fedora, it is required to install `libxkbcommon-devel`.
 
 ```bash
+rpm-ostree install libxkbcommon-devel
+```
+
+```bash
 # Use fade transitions
 randpaper --renderer awww --transition-type fade --transition-step 90 --transition-fps 60 --wallpaper-dir ~/Pictures/wallpapers
 
