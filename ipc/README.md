@@ -57,7 +57,7 @@ previous session can linger.
 Adding the following `exec` fixed this issue:
 
 ```sh
-exec pkill -x randpaper; randpaper --daemon
+exec pgrep -x randpaper || SWAYSOCK=$(ls /run/user/1000/sway-ipc.*.sock 2>/dev/null | head -1) randpaper --daemon
 ```
 
 I haven't had a chance to test hyprland, but am thinking its `exec-once` will
