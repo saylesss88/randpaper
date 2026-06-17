@@ -23,12 +23,12 @@ pub struct DaemonState {
 /// Returns [`BaseDirectoriesError`] if the XDG runtime directory can't be located
 pub fn find_socket(key: &str) -> Result<PathBuf, BaseDirectoriesError> {
     let xdg_dirs = BaseDirectories::with_prefix("randpaper");
-    Ok(xdg_dirs
-        .get_runtime_directory()?
+    let runtime = xdg_dirs.get_runtime_directory()?;
+    let path = runtime
         .join("randpaper")
-        .join(format!("randpaper-{key}.sock")))
+        .join(format!("randpaper-{key}.sock"));
+    Ok(path)
 }
-
 /// # Errors
 ///
 /// Returns [`IpcError::Xdg`] if the XDG runtime directory cannot be located.
