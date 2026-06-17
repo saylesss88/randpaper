@@ -7,7 +7,7 @@ license.workspace = true
 repository.workspace = true
 readme = "README.md"
 description = "Randpaper's inter process communication"
-keywords = ["wayland", "wallpaper", "layer-shell", "wlroots", "compositor"]
+keywords = ["wayland", "wallpaper", "layer-shell", "wlroots", "IPC"]
 
 [lib]
 name = "randpaper_ipc"
