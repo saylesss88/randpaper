@@ -1,7 +1,10 @@
-use super::ipc::{self, DaemonCommand, DaemonState};
 use super::render;
+use randpaper_ipc::{self, DaemonCommand, DaemonState};
 
-use crate::{cli::Config, theme::update_theme_file, traits::Backend, wallpaper::WallpaperCache};
+use crate::{
+    cli::Config, daemon_lock::session_key, theme::update_theme_file, traits::Backend,
+    wallpaper::WallpaperCache,
+};
 
 use std::time::Duration;
 use tokio::{
@@ -29,8 +32,9 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
     .map_err(|e| anyhow::anyhow!("invalid duration: {e}"))?;
 
     let (cmd_tx, mut cmd_rx) = tokio::sync::mpsc::channel::<DaemonCommand>(8);
+    let key = session_key();
     tokio::spawn(async move {
-        if let Err(e) = ipc::listen_for_ipc(cmd_tx).await {
+        if let Err(e) = randpaper_ipc::listen_for_ipc(cmd_tx, &key).await {
             log::error!("IPC listener exited: {e:#}");
         }
     });

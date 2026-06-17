@@ -1,5 +1,4 @@
 pub mod event_loop;
-pub mod ipc;
 mod render;
 
 // Re-exports

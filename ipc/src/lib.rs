@@ -1,4 +1,5 @@
-use crate::daemon_lock::session_key;
+use crate::error::IpcError;
+pub mod error;
 use std::path::PathBuf;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixListener;
@@ -17,16 +18,27 @@ pub struct DaemonState {
     pub paused: bool,
 }
 
-pub fn find_socket() -> Result<PathBuf, BaseDirectoriesError> {
+/// # Errors
+///
+/// Returns [`BaseDirectoriesError`] if the XDG runtime directory can't be located
+pub fn find_socket(key: &str) -> Result<PathBuf, BaseDirectoriesError> {
     let xdg_dirs = BaseDirectories::with_prefix("randpaper");
     Ok(xdg_dirs
         .get_runtime_directory()?
         .join("randpaper")
-        .join(format!("randpaper-{}.sock", session_key())))
+        .join(format!("randpaper-{key}.sock")))
 }
 
-pub async fn listen_for_ipc(tx: mpsc::Sender<DaemonCommand>) -> anyhow::Result<()> {
-    let socket_path = find_socket()?;
+/// # Errors
+///
+/// Returns [`IpcError::Xdg`] if the XDG runtime directory cannot be located.
+/// Returns [`IpcError::Io`] if binding the socket, accepting a connection, or reading/writing fails.
+/// Returns [`IpcError::Utf8`] if an incoming command is not valid UTF-8.
+pub async fn listen_for_ipc(
+    tx: mpsc::Sender<DaemonCommand>,
+    session_key: &str,
+) -> Result<(), IpcError> {
+    let socket_path = find_socket(session_key)?;
     let _ = std::fs::remove_file(&socket_path); // clean up stale socket
     let listener = UnixListener::bind(socket_path)?;
 

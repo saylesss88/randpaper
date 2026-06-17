@@ -8,13 +8,14 @@ mod traits;
 mod wallpaper;
 
 use crate::backends::{hyprland::HyprlandBackend, mango::MangoBackend, sway::SwayBackend};
-use crate::daemon::ipc::find_socket;
 use crate::daemon::run_loop;
+use crate::daemon_lock::session_key;
 use crate::traits::Backend;
 use crate::wallpaper::WallpaperCache;
 use anyhow::Context;
 use clap::Parser;
 use cli::{BackendType, Cli, Command, Config, RendererType};
+use randpaper_ipc::find_socket;
 use randpaper_lib::layer;
 use std::sync::{Arc, atomic::AtomicBool};
 use tokio::net::UnixStream;
@@ -26,7 +27,7 @@ use tokio::process::Command as TokioCommand;
 pub async fn send_ipc_command(cmd: &str) -> anyhow::Result<()> {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-    let socket_path = find_socket().context("Failed to locate the daemon socket file")?;
+    let socket_path = find_socket(&session_key())?;
     let mut stream = UnixStream::connect(&socket_path)
         .await
         .with_context(|| format!("Failed to connect to socket at {}", socket_path.display()))?;
