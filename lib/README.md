@@ -24,7 +24,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-randpaper_lib = "0.1.0"
+randpaper_lib = "0.2.0"
 ```
 
 ```rust
@@ -92,9 +92,8 @@ fn main() -> Result<(), randpaper_lib::errors::RenderError> {
 }
 ```
 
-The flag is checked at the top of every event loop iteration, so the actual stop
-latency is bounded by one `blocking_dispatch` round-trip, typically
-sub-millisecond.
+The flag is checked at the top of every event loop iteration. Stop latency is
+bounded by the poll timeout (100ms by default).
 
 ### `RenderError`
 
