@@ -19,3 +19,4 @@ rustix = "1.1.4"
 smithay-client-toolkit.workspace = true
 thiserror = {version = "2.0.18", default-features = false}
 wayland-client.workspace = true
+log.workspace = true

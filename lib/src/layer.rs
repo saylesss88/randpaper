@@ -275,19 +275,38 @@ impl OutputHandler for WallpaperState {
         qh: &QueueHandle<Self>,
         output: wl_output::WlOutput,
     ) {
-        if let Some(info) = self.output_state.info(&output)
-            && let Some(mode) = info.modes.iter().find(|m| m.current)
-        {
-            self.width = mode.dimensions.0.cast_unsigned();
-            self.height = mode.dimensions.1.cast_unsigned();
-        }
+        let name = self.output_state.info(&output).and_then(|i| i.name.clone());
+        log::debug!(
+            "new_output fired: {:?}, target: {:?}",
+            name,
+            self.target_output
+        );
 
-        // If a specific output was requested and this is it, pin the surface to it.
-        if let Some(ref target) = self.target_output.clone()
-            && let Some(info) = self.output_state.info(&output)
-            && info.name.as_deref() == Some(target.as_str())
-        {
-            self.create_layer_surface(qh, Some(&output));
+        // Only set dimensions if this is our target output
+        if let Some(ref target) = self.target_output {
+            if self
+                .output_state
+                .info(&output)
+                .and_then(|i| i.name.clone())
+                .as_deref()
+                == Some(target.as_str())
+            {
+                if let Some(info) = self.output_state.info(&output)
+                    && let Some(mode) = info.modes.iter().find(|m| m.current)
+                {
+                    self.width = mode.dimensions.0.cast_unsigned();
+                    self.height = mode.dimensions.1.cast_unsigned();
+                }
+                self.create_layer_surface(qh, Some(&output));
+            }
+        } else {
+            // No target, take dimensions from whatever output fires
+            if let Some(info) = self.output_state.info(&output)
+                && let Some(mode) = info.modes.iter().find(|m| m.current)
+            {
+                self.width = mode.dimensions.0.cast_unsigned();
+                self.height = mode.dimensions.1.cast_unsigned();
+            }
         }
     }
 
@@ -308,7 +327,9 @@ impl OutputHandler for WallpaperState {
 }
 
 impl LayerShellHandler for WallpaperState {
-    fn closed(&mut self, _conn: &Connection, _qh: &QueueHandle<Self>, _layer: &LayerSurface) {}
+    fn closed(&mut self, _conn: &Connection, _qh: &QueueHandle<Self>, _layer: &LayerSurface) {
+        log::warn!("closed fired for target: {:?}", self.target_output);
+    }
 
     fn configure(
         &mut self,
