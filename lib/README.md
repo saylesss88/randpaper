@@ -50,7 +50,7 @@ fn main() -> Result<(), randpaper_lib::errors::RenderError> {
 pub fn render_wallpaper(
     image_path: &Path,
     output_name: Option<&str>,
-    stop: Arc<AtomicBool>,
+    stop: &Arc<AtomicBool>,
 ) -> Result<(), RenderError>
 ```
 
@@ -124,6 +124,44 @@ pub enum RenderError {
 | `wayland-client`         | Core Wayland protocol connection and dispatch        |
 | `image`                  | Image decoding and scaling (cover mode via Lanczos3) |
 | `thiserror`              | Typed error enum                                     |
+| `rustix`                 | Poll timeout                                         |
+
+## Real-world usage
+
+`randpaper_lib` is used as the rendering backend for
+[persway-tokio](https://github.com/saylesss88/persway), a Sway/Wayland window
+management daemon. The integration drives per-output wallpaper setting via IPC:
+each output gets its own `render_wallpaper` call in a dedicated
+`spawn_blocking` thread, with the stop flag wired to a `WallpaperHandle` that
+the daemon holds in a `HashMap<String, WallpaperHandle>` keyed by output name
+(e.g. `"eDP-1"`, `"HDMI-A-1"`). Replacing a wallpaper on one monitor stops
+only that output's handle, leaving others untouched.
+
+### Non-blocking event loop
+
+The event loop uses a poll-based design rather than `blocking_dispatch`, so the
+stop flag is checked reliably even when the compositor sends no events (which is
+the common case for a static wallpaper):
+
+```rust
+loop {
+    if stop.load(Ordering::Relaxed) {
+        return Ok(());
+    }
+    event_queue.flush()?;
+    if let Some(guard) = event_queue.prepare_read() {
+        // Poll the Wayland fd with a 100ms timeout instead of blocking forever
+        rustix::event::poll(&mut [PollFd::new(&guard.connection_fd(), PollFlags::IN)],
+            Some(&Timespec { tv_sec: 0, tv_nsec: 100_000_000 }))?;
+        let _ = guard.read();
+    }
+    event_queue.dispatch_pending(&mut state)?;
+}
+```
+
+This means `WallpaperHandle::stop()` returns within ~100ms regardless of
+compositor activity, making it safe to call from async context without stalling
+the tokio runtime.
 
 ## Limitations
 
