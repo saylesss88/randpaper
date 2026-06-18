@@ -1,5 +1,6 @@
 use crate::errors::RenderError;
 use image::{DynamicImage, imageops::FilterType};
+use rustix::event::Timespec;
 use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState},
     delegate_registry,
@@ -88,7 +89,26 @@ pub fn render_wallpaper(
         if stop.load(Ordering::Relaxed) {
             return Ok(());
         }
-        event_queue.blocking_dispatch(&mut state)?;
+        // Flush pending requests
+        event_queue
+            .flush()
+            .map_err(|e| RenderError::Wayland(e.to_string()))?;
+        // Poll with a short timeout so stop flag is checked regularly
+        if let Some(guard) = event_queue.prepare_read() {
+            let fd = guard.connection_fd();
+            let mut pollfd = [rustix::event::PollFd::new(
+                &fd,
+                rustix::event::PollFlags::IN,
+            )];
+            let timeout = Timespec {
+                tv_sec: 0,
+                tv_nsec: 100_000_000,
+            };
+            let _ = rustix::event::poll(&mut pollfd, Some(&timeout));
+            let _ = guard.read();
+        } // Use a short timeout so we don't block forever
+
+        event_queue.dispatch_pending(&mut state)?;
     }
 }
 

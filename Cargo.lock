@@ -808,6 +808,7 @@ name = "randpaper_lib"
 version = "0.1.0"
 dependencies = [
  "image",
+ "rustix",
  "smithay-client-toolkit",
  "thiserror",
  "wayland-client",
