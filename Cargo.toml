@@ -63,7 +63,7 @@ tokio = {version = "1.52.3", features = [
 walkdir = "2.5.0"
 wayland-client = "0.31.14"
 xdg = "3.0.0"
-randpaper_lib = {path = "lib", version = "0.2.0"}
+randpaper_lib = {path = "lib", version = "0.2.1"}
 randpaper_ipc = {path = "ipc", version = "0.1.1"}
 
 [workspace.lints.rust]
