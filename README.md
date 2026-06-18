@@ -275,6 +275,8 @@ from a previous session are handled automatically.
 > ensure `SWAYSOCK` is available at startup:
 > ```
 > exec pgrep -x randpaper || SWAYSOCK=$(ls /run/user/1000/sway-ipc.*.sock 2>/dev/null | head -1) randpaper --daemon
+> # Or
+> exec pgrep -x randpaper || SWAYSOCK=$(ls /run/user/$(id -u)/sway-ipc.*.sock 2>/dev/null | head -1) randpaper --daemon
 > ```
 > The `SWAYSOCK` assignment is necessary because the environment variable
 > may not be inherited when launched from the sway config.
