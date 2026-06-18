@@ -25,9 +25,9 @@ wallpaper.
   - 🫟 **Waybar Theming**: Generates CSS variables based on the image palette.
 
 > [!NOTE]
-> Waybar theming: Colors update on the next Waybar restart. Live reload
-> (`SIGUSR2`) causes all windows to briefly reflow due to Waybar unmapping
-> its layer surface. (Disabled by default now)
+>  Waybar theming: Colors update on the next Waybar restart. Live reload
+> (`SIGUSR2`) causes all windows to briefly reflow due to Waybar unmapping its
+> layer surface. (Disabled by default now)
 
 - 🖥️ **Multi-Monitor**: Assigns a unique random image to every active output
   simultaneously.
@@ -36,9 +36,8 @@ wallpaper.
   cycling, or use one-shot mode for manual wallpaper changes.
 
 - 🛠️ **Modular Backends**: Works seamlessly with **Sway** ,**Hyprland**, and
-**MangoWM**)) (via
-  Sway IPC , `hyprctl`, or `mmsg`) and supports both `swaybg`, `awww`, and
-  `native` renderers.
+  **MangoWM**)) (via Sway IPC , `hyprctl`, or `mmsg`) and supports both
+  `swaybg`, `awww`, and `native` renderers.
 
 - Support for both `awww` and `swww` for compatibility.
 
@@ -82,12 +81,12 @@ randpaper --renderer awww --transition-type wipe --transition-step 90 --transiti
 Once you find what you like, either add an `exec` to the chosen command, or
 throw the options in a `config.toml` and simplify the `exec` greatly.
 
-> [!NOTE]:
-> It’s safe to use `exec_always` with `randpaper --daemon`; extra starts exit
-> cleanly if an instance is already running. (Same with from the CLI)
+> [!NOTE]
+> It’s safe to use `exec_always` with `randpaper --daemon`; extra
+> starts exit cleanly if an instance is already running. (Same with from the
+> CLI)
 
 ---
-
 
 ## Native Renderer
 
@@ -98,7 +97,7 @@ It creates a `zwlr_layer_shell_v1` surface at the background layer and renders
 directly via shared memory (`wl_shm`), one surface per monitor.
 
 > [!NOTE]
-> The native renderer is a WIP. It's functional but bare bones — no transitions,
+> The native renderer is a WIP. It's functional but bare bones, no transitions,
 > no animation. Use `--renderer native` to opt in.
 
 ## 📚️ Configuration (Optional)
@@ -150,9 +149,9 @@ Precedence:
 - `--transition-type`: Choose between (`simple`, `fade`, `wipe`, `outer`,
   `inner`, `random`)
 
-> [!NOTE]:
+> [!NOTE]
 > All transition options are ignored when using `--renderer swaybg` and
-`--renderer native`
+> `--renderer native`
 
 ---
 
@@ -200,6 +199,7 @@ bind=SUPER+SHIFT,N,spawn,randpaper
 > # ~/.config/mango/env.conf
 > env=PATH,/home/jr/.local/bin:/home/jr/.cargo/bin:/usr/local/bin:/usr/bin:/bin
 > ```
+>
 > - Make sure to source it, in your main config add: `source=./env.conf`
 
 ---
@@ -247,31 +247,37 @@ pkill -USR1 randpaper
 ```
 
 > [!NOTE]
-> Using `pkill` can be hit or miss. Try the new IPC when using the daemon.
+> Using `pkill` can be hit or miss. Try the new IPC when using the
+> daemon.
 
 ## Randpaper IPC
 
-
 ## IPC
 
-`randpaper` exposes a Unix socket for runtime control. The socket is created
-at `$XDG_RUNTIME_DIR/randpaper/randpaper-<session>.sock` on daemon startup.
+`randpaper` exposes a Unix socket for runtime control via the `randpaper_ipc`
+crate. The socket is created at
+`$XDG_RUNTIME_DIR/randpaper/randpaper-<session>.sock` on daemon startup.
 
 Commands are sent via `randpaper` subcommands:
 
-| Command  | Effect                              |
-|----------|-------------------------------------|
+| Command            | Effect                                  |
+| ------------------ | --------------------------------------- |
 | `randpaper next`   | Cycle to the next wallpaper immediately |
-| `randpaper pause`  | Pause automatic cycling             |
-| `randpaper resume` | Resume automatic cycling            |
-| `randpaper status` | Print current daemon state          |
+| `randpaper pause`  | Pause automatic cycling                 |
+| `randpaper resume` | Resume automatic cycling                |
+| `randpaper status` | Print current daemon state              |
 
-The socket is cleaned up and re-created on each daemon start, so stale
-sockets from a previous session are handled automatically.
+The socket is cleaned up and re-created on each daemon start, so stale sockets
+from a previous session are handled automatically.
 
 > [!IMPORTANT]
-> On sway I had to change the exec command to ensure multiple instances of
-> randpaper weren't created. `exec pgrep -x randpaper || randpaper --daemon`
+> On sway, use this exec command to prevent multiple daemon instances and
+> ensure `SWAYSOCK` is available at startup:
+> ```
+> exec pgrep -x randpaper || SWAYSOCK=$(ls /run/user/1000/sway-ipc.*.sock 2>/dev/null | head -1) randpaper --daemon
+> ```
+> The `SWAYSOCK` assignment is necessary because the environment variable
+> may not be inherited when launched from the sway config.
 
 ---
 
@@ -337,7 +343,8 @@ $mod+Shift+t exec kitty -o allow_remote_control=yes --listen-on unix:/tmp/mykitt
 
 ---
 
-##  Waybar 
+## Waybar
+
 <details>
 <summary> ✔️ Waybar </summary>
 
@@ -412,9 +419,9 @@ window#waybar {
 Obviously, the more hard-coded colors you replace with the dynamically generated
 CSS variables the more noticeable it will be.
 
-> [!NOTE]:
-> Just adding the `@import` at the top makes the variables available, you
-> need to reference them for the changes to be applied.
+> [!NOTE]
+> Just adding the `@import` at the top makes the variables available, you need
+> to reference them for the changes to be applied.
 
 - On NixOS, after cycling with one-shot run `pkill -USR2 waybar` to apply the
   new theme. (Causes a flicker)
