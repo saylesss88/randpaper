@@ -24,7 +24,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-randpaper_lib = "0.2.0"
+randpaper_lib = "0.2.1"
 ```
 
 ```rust
