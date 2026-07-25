@@ -1,6 +1,5 @@
-use thiserror::Error;
-
 use smithay_client_toolkit::shm::CreatePoolError;
+use thiserror::Error;
 use wayland_client::{ConnectError, DispatchError, globals::GlobalError};
 
 #[derive(Error, Debug)]

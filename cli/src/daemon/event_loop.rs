@@ -1,16 +1,16 @@
-use super::render;
-use randpaper_ipc::{self, DaemonCommand, DaemonState};
-
-use crate::{
-    cli::Config, daemon_lock::session_key, theme::update_theme_file, traits::Backend,
-    wallpaper::WallpaperCache,
-};
-
 use std::time::Duration;
+
 use tokio::{
     signal::unix::{SignalKind, signal},
     time::sleep,
 };
+
+use super::render;
+use crate::{
+    cli::Config, daemon_lock::session_key, theme::update_theme_file, traits::Backend,
+    wallpaper::WallpaperCache,
+};
+use randpaper_ipc::{self, DaemonCommand, DaemonState};
 
 /// Runs the persistent background process that cycles wallpapers and themes.
 ///

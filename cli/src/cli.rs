@@ -1,10 +1,11 @@
+use std::path::PathBuf;
+
 use clap::{Parser, ValueEnum};
 use figment::{
     Figment,
     providers::{Env, Format, Serialized, Toml},
 };
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 
 /// Random Photo from Pexels :`city_sunset`
 #[derive(Parser, Debug)]

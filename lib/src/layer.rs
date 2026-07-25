@@ -1,4 +1,7 @@
-use crate::errors::RenderError;
+use std::{
+    num::NonZeroU32, path::Path, sync::Arc, sync::atomic::AtomicBool, sync::atomic::Ordering,
+};
+
 use image::{DynamicImage, imageops::FilterType};
 use rustix::event::Timespec;
 use smithay_client_toolkit::{
@@ -16,14 +19,13 @@ use smithay_client_toolkit::{
     },
     shm::{Shm, ShmHandler, slot::SlotPool},
 };
-use std::{
-    num::NonZeroU32, path::Path, sync::Arc, sync::atomic::AtomicBool, sync::atomic::Ordering,
-};
 use wayland_client::{
     Connection, QueueHandle,
     globals::registry_queue_init,
     protocol::{wl_output, wl_shm, wl_surface},
 };
+
+use crate::errors::RenderError;
 
 /// Render a wallpaper image on a Wayland output and block until the
 /// connection is closed.
@@ -194,14 +196,18 @@ impl WallpaperState {
             .into_rgba8();
 
         // wl_shm Xrgb8888 is little-endian: bytes are [B, G, R, X].
-        for (dst, src) in canvas.chunks_exact_mut(4).zip(scaled.pixels()) {
+        for (dst, src) in canvas
+            .as_chunks_mut::<4>()
+            .0
+            .iter_mut()
+            .zip(scaled.pixels())
+        {
             let [r, g, b, _a] = src.0;
             dst[0] = b;
             dst[1] = g;
             dst[2] = r;
             dst[3] = 0xFF;
         }
-
         layer
             .wl_surface()
             .damage_buffer(0, 0, width.cast_signed(), height.cast_signed());
@@ -275,7 +281,7 @@ impl OutputHandler for WallpaperState {
         qh: &QueueHandle<Self>,
         output: wl_output::WlOutput,
     ) {
-        let name = self.output_state.info(&output).and_then(|i| i.name.clone());
+        let name = self.output_state.info(&output).and_then(|i| i.name);
         log::debug!(
             "new_output fired: {:?}, target: {:?}",
             name,
@@ -287,7 +293,7 @@ impl OutputHandler for WallpaperState {
             if self
                 .output_state
                 .info(&output)
-                .and_then(|i| i.name.clone())
+                .and_then(|i| i.name)
                 .as_deref()
                 == Some(target.as_str())
             {

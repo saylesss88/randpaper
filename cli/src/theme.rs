@@ -1,9 +1,11 @@
+use std::{
+    fmt::Write,
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
+
 use anyhow::Context;
-use std::fmt::Write;
-use std::path::{Path, PathBuf};
-use std::process::Command;
-// use std::time::Duration;
-use std::fs;
 
 /// Represents a color in the Red-Green-Blue color space.
 #[derive(Clone, Copy, Debug)]

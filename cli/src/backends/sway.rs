@@ -2,13 +2,14 @@
 // - Uses swayipc_async first (pure Rust IPC).
 // - If it errors or times out, falls back to `swaymsg -t get_outputs -r`.
 // - Never mutates SWAYSOCK env (avoids global races).
-use crate::traits::Backend;
 use anyhow::{Context, bail};
 use async_trait::async_trait;
 use serde::Deserialize;
 use swayipc_async::Connection;
 use tokio::process::Command;
 use tokio::time::{Duration, timeout};
+
+use crate::traits::Backend;
 
 /// Sway backend implementation.
 ///

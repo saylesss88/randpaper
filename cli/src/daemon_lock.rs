@@ -1,5 +1,6 @@
-use fslock::LockFile;
 use std::{env, fs, path::PathBuf};
+
+use fslock::LockFile;
 
 fn sanitize_component(s: &str) -> String {
     // Keep it ASCII and filesystem-friendly.

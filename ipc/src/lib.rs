@@ -1,10 +1,13 @@
-use crate::error::IpcError;
 pub mod error;
+
 use std::path::PathBuf;
+
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixListener;
 use tokio::sync::mpsc;
 use xdg::{BaseDirectories, BaseDirectoriesError};
+
+use crate::error::IpcError;
 
 #[derive(Debug)]
 pub enum DaemonCommand {

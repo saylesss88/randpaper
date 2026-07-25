@@ -1,5 +1,6 @@
-use rand::prelude::IndexedRandom;
 use std::path::{Path, PathBuf};
+
+use rand::prelude::IndexedRandom;
 use walkdir::WalkDir;
 
 /// A collection of discovered image files available for selection.
