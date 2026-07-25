@@ -24,11 +24,6 @@ wallpaper.
   **Foot**, keeping your terminal in sync with your desktop.
   - 🫟 **Waybar Theming**: Generates CSS variables based on the image palette.
 
-> [!NOTE]
->  Waybar theming: Colors update on the next Waybar restart. Live reload
-> (`SIGUSR2`) causes all windows to briefly reflow due to Waybar unmapping its
-> layer surface. (Disabled by default now)
-
 - 🖥️ **Multi-Monitor**: Assigns a unique random image to every active output
   simultaneously.
 
@@ -47,7 +42,7 @@ wallpaper.
 
 **Prerequisites**
 
-`swaybg` or (`awww` / `swww`) are no longer required, if you want a simple
+`swaybg` or (`awww` / `swww`) are no longer required, if you want a simple static
 renderer that's built in, try `native`.
 
 If you want slick animations and more, choose `awww`.
@@ -220,7 +215,7 @@ Recommended autostart:
 
 ```text
 # With `config.toml`
-exec pgrep -x randpaper || randpaper --daemon
+exec randpaper --daemon
 # Or something like this without using the config:
 exec randpaper -w ~/Pictures/wallpapers -t 5m -r awww --daemon
 ```
@@ -248,7 +243,7 @@ pkill -USR1 randpaper
 
 > [!NOTE]
 > Using `pkill` can be hit or miss. Try the new IPC when using the
-> daemon.
+> daemon. (`randpaper next`)
 
 ## Randpaper IPC
 
@@ -271,15 +266,7 @@ The socket is cleaned up and re-created on each daemon start, so stale sockets
 from a previous session are handled automatically.
 
 > [!IMPORTANT]
-> On sway, use this exec command to prevent multiple daemon instances and
-> ensure `SWAYSOCK` is available at startup:
-> ```
-> exec pgrep -x randpaper || SWAYSOCK=$(ls /run/user/1000/sway-ipc.*.sock 2>/dev/null | head -1) randpaper --daemon
-> # Or
-> exec pgrep -x randpaper || SWAYSOCK=$(ls /run/user/$(id -u)/sway-ipc.*.sock 2>/dev/null | head -1) randpaper --daemon
-> ```
-> The `SWAYSOCK` assignment is necessary because the environment variable
-> may not be inherited when launched from the sway config.
+> `randpaper_ipc` relies on the daemon being running to work.
 
 ---
 
@@ -481,9 +468,9 @@ wayland.windowManager.sway = {
 };
 ```
 
-> Note: `randpaper` manages the renderer process for you. You do not need
-> separate `exec-once = swaybg ...` or `exec-once = swww ...` lines in your
-> config.
+> [!NOTE]
+> `randpaper` manages the renderer process for you. You do not need separate
+> `exec-once = swaybg ...` or `exec-once = swww ...` lines in your config.
 
 ### Using the `config.toml` on NixOS
 
