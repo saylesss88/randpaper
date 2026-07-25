@@ -48,7 +48,10 @@ log = "0.4.33"
 rand = "0.10.2"
 serde = {version = "1.0.229", default-features = false}
 serde_json = "1.0.151"
-smithay-client-toolkit = {version = "0.21.1", default-features = false}
+# smithay-client-toolkit = {version = "0.21.1", features = ["calloop"]}
+
+smithay-client-toolkit = { version = "0.21.1", features = ["calloop", "xkbcommon"] }
+# smithay-client-toolkit = {version = "0.21.1", default-features = false}
 swayipc-async = "3.0.0"
 tokio = {version = "1.53.1", features = [
 	"io-util",

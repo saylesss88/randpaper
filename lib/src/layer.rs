@@ -5,7 +5,7 @@ use std::{
 use image::{DynamicImage, imageops::FilterType};
 use rustix::event::Timespec;
 use smithay_client_toolkit::{
-    compositor::{CompositorHandler, CompositorState},
+    compositor::{CompositorHandler, CompositorState, FrameCallbackData},
     delegate_registry,
     output::{OutputHandler, OutputState},
     registry::{ProvidesRegistryState, RegistryState},
@@ -215,7 +215,9 @@ impl WallpaperState {
         layer.wl_surface().commit();
 
         // Request a callback for the next frame so Wayland doesn't starve.
-        layer.wl_surface().frame(qh, layer.wl_surface().clone());
+        layer
+            .wl_surface()
+            .frame(qh, FrameCallbackData(layer.wl_surface().clone()));
 
         // Finish the function successfully
         Ok(())
@@ -380,15 +382,10 @@ impl ShmHandler for WallpaperState {
 // ─── Delegation macros ────────────────────────────────────────────────────────
 
 delegate_registry!(WallpaperState);
-
 impl ProvidesRegistryState for WallpaperState {
     fn registry(&mut self) -> &mut RegistryState {
         &mut self.registry_state
     }
     registry_handlers![OutputState];
 }
-
-smithay_client_toolkit::delegate_compositor!(WallpaperState);
-smithay_client_toolkit::delegate_output!(WallpaperState);
-smithay_client_toolkit::delegate_layer!(WallpaperState);
-smithay_client_toolkit::delegate_shm!(WallpaperState);
+smithay_client_toolkit::delegate_dispatch2!(WallpaperState);
