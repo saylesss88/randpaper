@@ -7,19 +7,21 @@ mod theme;
 mod traits;
 mod wallpaper;
 
-use crate::backends::{hyprland::HyprlandBackend, mango::MangoBackend, sway::SwayBackend};
-use crate::daemon::run_loop;
-use crate::daemon_lock::session_key;
-use crate::traits::Backend;
-use crate::wallpaper::WallpaperCache;
+use std::sync::{Arc, atomic::AtomicBool};
+
 use anyhow::Context;
 use clap::Parser;
+use tokio::net::UnixStream;
+use tokio::process::Command as TokioCommand;
+
 use cli::{BackendType, Cli, Command, Config, RendererType};
 use randpaper_ipc::find_socket;
 use randpaper_lib::layer;
-use std::sync::{Arc, atomic::AtomicBool};
-use tokio::net::UnixStream;
-use tokio::process::Command as TokioCommand;
+
+use crate::backends::{hyprland::HyprlandBackend, mango::MangoBackend, sway::SwayBackend};
+use crate::daemon_lock::session_key;
+use crate::traits::Backend;
+use crate::wallpaper::WallpaperCache;
 
 /// # Errors
 ///
@@ -183,24 +185,25 @@ async fn main() -> anyhow::Result<()> {
     // One daemon per login session: use a runtime-dir lock (per-session).
     // XDG_RUNTIME_DIR is the right place for per-session runtime state.
     let Some(_guard) = crate::daemon_lock::single_instance_guard()? else {
+        log::info!("Another randpaper daemon is already running. Exiting.");
         return Ok(());
     };
 
     match config.backend {
         BackendType::Hyprland => {
             log::info!("Using Hyprland backend");
-            run_loop(config, HyprlandBackend).await?;
+            daemon::run_loop(config, HyprlandBackend).await?;
         }
         BackendType::Mango => {
             log::info!("Using MangoWM backend");
-            run_loop(config, MangoBackend).await?;
+            daemon::run_loop(config, MangoBackend).await?;
         }
         BackendType::Sway => {
             log::info!("Using Sway backend");
             let backend = SwayBackend {
                 outputs_override: config.outputs.clone(),
             };
-            run_loop(config, backend).await?;
+            daemon::run_loop(config, backend).await?;
         }
     }
 

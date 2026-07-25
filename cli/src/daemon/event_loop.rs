@@ -47,8 +47,9 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
     let _ = update_theme_file(img);
 
     if let Err(e) = renderer.apply(&config, &cache, &monitors).await {
-        log::error!("Failed to apply wallpaper: {e:#}. Retrying next cycle.");
-        return Err(e);
+        log::warn!("Initial wallpaper apply failed: {e:#}. Will retry on first cycle.");
+        // log::error!("Failed to apply wallpaper: {e:#}. Retrying next cycle.");
+        // return Err(e);
     }
 
     loop {
@@ -69,7 +70,7 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
                 should_cycle = true;
             }
             Some(cmd) = cmd_rx.recv() => {
-                log::debug!("Recieved IPC command: {cmd:?}");
+                log::debug!("Received IPC command: {cmd:?}");
                 match cmd {
                     DaemonCommand::Next => {
                         log::info!("IPC next wallpaper");
