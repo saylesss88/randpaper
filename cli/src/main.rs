@@ -8,6 +8,7 @@ mod theme;
 mod traits;
 mod wallpaper;
 
+#[cfg(feature = "native-renderer")]
 use std::sync::{Arc, atomic::AtomicBool};
 
 use anyhow::Context;
@@ -73,6 +74,7 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
     };
 
     // 2. Pick wallpaper and generate the theme files (Waybar, Terminals)
+    #[cfg(feature = "theming")]
     let img = cache.pick_random();
     #[cfg(feature = "theming")]
     theme::update_theme_file(img)?;

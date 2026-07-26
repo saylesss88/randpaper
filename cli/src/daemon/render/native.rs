@@ -34,7 +34,7 @@ impl NativeRenderer {
 
             let handle = tokio::task::spawn_blocking(move || {
                 if let Err(e) =
-                    crate::layer::render_wallpaper(&img_path, Some(&monitor_name), &stop)
+                    randpaper_lib::layer::render_wallpaper(&img_path, Some(&monitor_name), &stop)
                 {
                     log::error!("native renderer error on {monitor_name}: {e:#}");
                 }

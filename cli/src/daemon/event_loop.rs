@@ -6,10 +6,9 @@ use tokio::{
 };
 
 use super::render;
-use crate::{
-    cli::Config, daemon_lock::session_key, theme::update_theme_file, traits::Backend,
-    wallpaper::WallpaperCache,
-};
+#[cfg(feature = "theming")]
+use crate::theme::{self, update_theme_file};
+use crate::{cli::Config, daemon_lock::session_key, traits::Backend, wallpaper::WallpaperCache};
 use randpaper_ipc::{self, DaemonCommand, DaemonState};
 
 /// Runs the persistent background process that cycles wallpapers and themes.
@@ -20,7 +19,8 @@ use randpaper_ipc::{self, DaemonCommand, DaemonState};
 /// invalid duration format, renderer initialization fails, or if setting up the `SIGUSR1`
 /// signal handler encounters an OS error.
 pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<()> {
-    crate::theme::ensure_theme_exists()?;
+    #[cfg(feature = "theming")]
+    theme::ensure_theme_exists()?;
     let cache = WallpaperCache::new(&config.wallpaper_dir)?;
     let mut renderer = render::Renderer::new(&config).await?;
     let period: Duration = humantime::parse_duration(
@@ -43,13 +43,13 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
 
     // Apply wallpaper immediately on startup
     let monitors = backend.get_active_monitors().await?;
+    #[cfg(feature = "theming")]
     let img = cache.pick_random();
+    #[cfg(feature = "theming")]
     let _ = update_theme_file(img);
 
     if let Err(e) = renderer.apply(&config, &cache, &monitors).await {
         log::warn!("Initial wallpaper apply failed: {e:#}. Will retry on first cycle.");
-        // log::error!("Failed to apply wallpaper: {e:#}. Retrying next cycle.");
-        // return Err(e);
     }
 
     loop {
@@ -103,7 +103,9 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
                     continue;
                 }
             };
+            #[cfg(feature = "theming")]
             let img = cache.pick_random();
+            #[cfg(feature = "theming")]
             let _ = update_theme_file(img);
             if let Err(e) = renderer.apply(&config, &cache, &monitors).await {
                 log::error!("Failed to apply wallpaper: {e:#}. Retrying next cycle");

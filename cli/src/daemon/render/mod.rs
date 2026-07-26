@@ -1,9 +1,12 @@
 use crate::cli::{Config, RendererType};
+
+#[cfg(feature = "native-renderer")]
 use crate::daemon::render::native::NativeRenderer;
 use crate::wallpaper::WallpaperCache;
 use tokio::process::Child;
 
 pub mod awww;
+#[cfg(feature = "native-renderer")]
 pub mod native;
 mod swaybg;
 
@@ -18,6 +21,7 @@ pub struct Renderer {
     /// The path to the detected `awww` binary.
     awww_bin: Option<String>,
     /// Handles for the per-monitor native renderer threads.
+    #[cfg(feature = "native-renderer")]
     native: NativeRenderer,
 }
 
@@ -38,11 +42,14 @@ impl Renderer {
                 awww::ensure_awww_daemon(&bin).await?;
                 Some(bin)
             }
-            RendererType::Swaybg | RendererType::Native => None,
+            RendererType::Swaybg => None,
+            #[cfg(feature = "native-renderer")]
+            RendererType::Native => None,
         };
         Ok(Self {
             swaybg_child: None,
             awww_bin,
+            #[cfg(feature = "native-renderer")]
             native: NativeRenderer::new(),
         })
     }
@@ -74,6 +81,7 @@ impl Renderer {
                 awww::apply(config, cache, monitors, bin).await
             }
 
+            #[cfg(feature = "native-renderer")]
             RendererType::Native => {
                 self.native.apply(cache, monitors);
                 Ok(())
