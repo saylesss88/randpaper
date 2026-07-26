@@ -22,7 +22,7 @@ waybar = ["theming"]
 terminals = ["theming"]
 
 [dependencies]
-randpaper_lib.workspace = true
+randpaper_lib = {workspace = true, features = ["native-renderer"]}
 randpaper_ipc.workspace = true
 anyhow.workspace = true
 async-trait.workspace = true
