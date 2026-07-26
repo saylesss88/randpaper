@@ -4,7 +4,7 @@
 
 # randpaper
 
-![randpaper demo](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/demo.gif)
+![randpaper demo](https://raw.githubusercontent.com/saylesss88/randpaper/main/assets/randpaper-new.gif)
 
 Fast per-monitor wallpaper rotation + optional theme syncing for Wayland
 (Sway/Hyprland/MangoWM).
