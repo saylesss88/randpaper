@@ -107,6 +107,7 @@ pub enum RendererType {
     #[clap(alias = "swww")]
     #[serde(alias = "swww")]
     Awww,
+    #[cfg(feature = "native-renderer")]
     Native,
 }
 

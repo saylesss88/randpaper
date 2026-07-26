@@ -10,9 +10,16 @@ description.workspace = true
 keywords.workspace = true
 readme.workspace = true
 
-[[bin]]
-name = "randpaper"
-path = "src/main.rs"
+# [[bin]]
+# name = "randpaper"
+# path = "src/main.rs"
+
+[features]
+default = ["theming", "waybar", "terminals", "native-renderer"]
+native-renderer = ["randpaper_lib/native-renderer"]
+theming = ["dep:color-thief", "dep:image"]
+waybar = ["theming"]
+terminals = ["theming"]
 
 [dependencies]
 randpaper_lib.workspace = true
@@ -20,13 +27,13 @@ randpaper_ipc.workspace = true
 anyhow.workspace = true
 async-trait.workspace = true
 clap.workspace = true
-color-thief.workspace = true
+color-thief = {workspace = true, optional = true}
 dirs.workspace = true
 env_logger.workspace = true
 figment.workspace = true
 fslock.workspace = true
 humantime.workspace = true
-image.workspace = true
+image = {workspace = true, optional = true}
 log.workspace = true
 rand.workspace = true
 serde.workspace = true

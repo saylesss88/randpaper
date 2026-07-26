@@ -14,9 +14,18 @@ name = "randpaper_lib"
 path = "src/lib.rs"
 
 [dependencies]
-image.workspace = true
-rustix = { version = "1.1.4", default-features = false }
-smithay-client-toolkit.workspace = true
+image = {workspace = true, optional = true}
+rustix = {version = "1.1.4", default-features = false, optional = true}
+smithay-client-toolkit = {workspace = true, optional = true}
 thiserror = {version = "2.0.19", default-features = false}
-wayland-client.workspace = true
+wayland-client = {workspace = true, optional = true}
 log.workspace = true
+
+[features]
+default = ["native-renderer"]
+native-renderer = [
+	"dep:smithay-client-toolkit",
+	"dep:wayland-client",
+	"dep:rustix",
+	"dep:image",
+]

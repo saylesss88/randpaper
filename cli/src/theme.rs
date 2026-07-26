@@ -6,6 +6,7 @@ use std::{
 };
 
 use anyhow::Context;
+use image::imageops::FilterType;
 
 /// Represents a color in the Red-Green-Blue color space.
 #[derive(Clone, Copy, Debug)]
@@ -124,6 +125,7 @@ fn atomic_write(path: &Path, contents: &str) -> anyhow::Result<()> {
 
 /// Generates a CSS file for Waybar containing @define-color variables
 /// based on the extracted palette.
+#[cfg(feature = "waybar")]
 pub fn write_waybar_css(
     theme_dir: &Path,
     palette: &[color_thief::Color],
@@ -196,7 +198,7 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
 
     // Load and downsample image for faster color extraction
     let img = image::open(image_path).context("Failed to open image for theming")?;
-    let img = img.resize(300, 300, image::imageops::FilterType::Nearest);
+    let img = img.resize(300, 300, FilterType::Nearest);
     let buffer = img.to_rgb8();
 
     // Extract dominant colors
@@ -218,6 +220,7 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
         .join("randpaper/themes");
 
     // 1. Write Waybar CSS (Atomic)
+    #[cfg(feature = "waybar")]
     let _ = write_waybar_css(&theme_dir, &palette)?;
 
     // 2. Write Terminal Configs (Atomic)
@@ -259,34 +262,37 @@ pub fn update_theme_file(image_path: &Path) -> anyhow::Result<()> {
     // reload_waybar_only();
 
     // 5. Best-effort to reload foot
-    let foot_result = Command::new("sh")
-        .args(["-c", "pkill -USR1 foot; sleep 0.05; pkill -USR1 foot"])
-        .status();
-    log::info!("Foot reload result: {foot_result:?}");
-
-    // 6. Reload Kitty (Requires remote control / unix socket enabled)
-    if Path::new("/tmp/mykitty").exists() {
-        let kitty_conf = theme_dir.join("kitty.conf");
-        let kitty_result = Command::new("kitten")
-            .args([
-                "@",
-                "--to",
-                "unix:/tmp/mykitty",
-                "set-colors",
-                "--all",
-                "--configured",
-                kitty_conf
-                    .to_str()
-                    .ok_or_else(|| anyhow::anyhow!("non-utf8 path"))?,
-            ])
+    #[cfg(feature = "terminals")]
+    {
+        let foot_result = Command::new("sh")
+            .args(["-c", "pkill -USR1 foot; sleep 0.05; pkill -USR1 foot"])
             .status();
-        log::info!("Kitty set-colors result: {kitty_result:?}");
-    }
+        log::info!("Foot reload result: {foot_result:?}");
 
-    // 7. Reload Ghostty (SIGUSR2 triggers config reload)
-    let _ = Command::new("pkill")
-        .args(["-USR2", "-x", "ghostty"])
-        .status();
+        // 6. Reload Kitty (Requires remote control / unix socket enabled)
+        if Path::new("/tmp/mykitty").exists() {
+            let kitty_conf = theme_dir.join("kitty.conf");
+            let kitty_result = Command::new("kitten")
+                .args([
+                    "@",
+                    "--to",
+                    "unix:/tmp/mykitty",
+                    "set-colors",
+                    "--all",
+                    "--configured",
+                    kitty_conf
+                        .to_str()
+                        .ok_or_else(|| anyhow::anyhow!("non-utf8 path"))?,
+                ])
+                .status();
+            log::info!("Kitty set-colors result: {kitty_result:?}");
+        }
+
+        // 7. Reload Ghostty (SIGUSR2 triggers config reload)
+        let _ = Command::new("pkill")
+            .args(["-USR2", "-x", "ghostty"])
+            .status();
+    }
 
     Ok(())
 }

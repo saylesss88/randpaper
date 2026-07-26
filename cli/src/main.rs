@@ -3,6 +3,7 @@ mod backends;
 mod cli;
 mod daemon;
 mod daemon_lock;
+#[cfg(feature = "theming")]
 mod theme;
 mod traits;
 mod wallpaper;
@@ -16,6 +17,7 @@ use tokio::process::Command as TokioCommand;
 
 use cli::{BackendType, Cli, Command, Config, RendererType};
 use randpaper_ipc::find_socket;
+#[cfg(feature = "native-renderer")]
 use randpaper_lib::layer;
 
 use crate::backends::{hyprland::HyprlandBackend, mango::MangoBackend, sway::SwayBackend};
@@ -72,6 +74,7 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
 
     // 2. Pick wallpaper and generate the theme files (Waybar, Terminals)
     let img = cache.pick_random();
+    #[cfg(feature = "theming")]
     theme::update_theme_file(img)?;
 
     // 3. Apply the wallpaper using the selected renderer (swaybg or awww)
@@ -131,13 +134,14 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
             }
         }
 
+        #[cfg(feature = "native-renderer")]
         RendererType::Native => {
             // Spawn one thread per monitor so they run concurrently.
             let mut handles = Vec::new();
             for monitor in monitors {
                 let img_path = cache.pick_random().to_path_buf();
                 handles.push(std::thread::spawn(move || {
-                    crate::layer::render_wallpaper(
+                    layer::render_wallpaper(
                         &img_path,
                         Some(&monitor),
                         &Arc::new(AtomicBool::new(false)),
@@ -171,6 +175,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let config = Config::from_cli(cli_args)?;
+    #[cfg(feature = "theming")]
     crate::theme::ensure_theme_exists()?;
 
     if !config.daemon {
