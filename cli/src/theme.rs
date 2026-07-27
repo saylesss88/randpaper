@@ -1,9 +1,10 @@
-use std::{
-    fmt::Write,
-    fs,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{fmt::Write, fs, path::Path};
+
+#[cfg(feature = "terminals")]
+use std::process::Command;
+
+#[cfg(feature = "waybar")]
+use std::path::PathBuf;
 
 use anyhow::Context;
 use image::imageops::FilterType;
