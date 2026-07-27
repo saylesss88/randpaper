@@ -10,10 +10,6 @@ description.workspace = true
 keywords.workspace = true
 readme.workspace = true
 
-# [[bin]]
-# name = "randpaper"
-# path = "src/main.rs"
-
 [features]
 default = ["theming", "waybar", "terminals", "native-renderer"]
 native-renderer = ["randpaper_lib/native-renderer"]

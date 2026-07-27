@@ -74,9 +74,9 @@ async fn oneshot_mode(config: &Config) -> anyhow::Result<()> {
     };
 
     // 2. Pick wallpaper and generate the theme files (Waybar, Terminals)
-    #[cfg(feature = "theming")]
+    #[cfg(any(feature = "waybar", feature = "terminals"))]
     let img = cache.pick_random();
-    #[cfg(feature = "theming")]
+    #[cfg(any(feature = "waybar", feature = "terminals"))]
     theme::update_theme_file(img)?;
 
     // 3. Apply the wallpaper using the selected renderer (swaybg or awww)
@@ -177,7 +177,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let config = Config::from_cli(cli_args)?;
-    #[cfg(feature = "theming")]
+    #[cfg(feature = "waybar")]
     crate::theme::ensure_theme_exists()?;
 
     if !config.daemon {

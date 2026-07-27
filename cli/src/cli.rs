@@ -143,8 +143,6 @@ impl Default for Config {
 
 impl Config {
     pub fn from_cli(cli: Cli) -> anyhow::Result<Self> {
-        // let cli = Cli::parse();
-
         let mut builder = Figment::new().merge(Serialized::defaults(Self::default()));
 
         // 1. Determine config file path

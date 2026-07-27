@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use rand::prelude::IndexedRandom;
 use walkdir::WalkDir;
 
-#[cfg(feature = "theming")]
+#[cfg(feature = "waybar")]
 use crate::theme;
 
 /// A collection of discovered image files available for selection.
@@ -28,7 +28,7 @@ impl WallpaperCache {
     /// - No supported image files are found.
     pub fn new<P: AsRef<Path>>(dir: P) -> anyhow::Result<Self> {
         // Ensure the theme directory/fallback CSS exists before we start picking wallpapers
-        #[cfg(feature = "theming")]
+        #[cfg(feature = "waybar")]
         theme::ensure_theme_exists()?;
         let mut files = Vec::new();
 

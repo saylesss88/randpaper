@@ -6,7 +6,7 @@ use tokio::{
 };
 
 use super::render;
-#[cfg(feature = "theming")]
+#[cfg(any(feature = "waybar", feature = "terminals"))]
 use crate::theme::{self, update_theme_file};
 use crate::{cli::Config, daemon_lock::session_key, traits::Backend, wallpaper::WallpaperCache};
 use randpaper_ipc::{self, DaemonCommand, DaemonState};
@@ -19,7 +19,7 @@ use randpaper_ipc::{self, DaemonCommand, DaemonState};
 /// invalid duration format, renderer initialization fails, or if setting up the `SIGUSR1`
 /// signal handler encounters an OS error.
 pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<()> {
-    #[cfg(feature = "theming")]
+    #[cfg(feature = "waybar")]
     theme::ensure_theme_exists()?;
     let cache = WallpaperCache::new(&config.wallpaper_dir)?;
     let mut renderer = render::Renderer::new(&config).await?;
@@ -43,9 +43,10 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
 
     // Apply wallpaper immediately on startup
     let monitors = backend.get_active_monitors().await?;
-    #[cfg(feature = "theming")]
+
+    #[cfg(any(feature = "waybar", feature = "terminals"))]
     let img = cache.pick_random();
-    #[cfg(feature = "theming")]
+    #[cfg(any(feature = "waybar", feature = "terminals"))]
     let _ = update_theme_file(img);
 
     if let Err(e) = renderer.apply(&config, &cache, &monitors).await {
