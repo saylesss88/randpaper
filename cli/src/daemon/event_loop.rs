@@ -104,9 +104,9 @@ pub async fn run_loop<B: Backend>(config: Config, backend: B) -> anyhow::Result<
                     continue;
                 }
             };
-            #[cfg(feature = "theming")]
+            #[cfg(any(feature = "waybar", feature = "terminals"))]
             let img = cache.pick_random();
-            #[cfg(feature = "theming")]
+            #[cfg(any(feature = "waybar", feature = "terminals"))]
             let _ = update_theme_file(img);
             if let Err(e) = renderer.apply(&config, &cache, &monitors).await {
                 log::error!("Failed to apply wallpaper: {e:#}. Retrying next cycle");

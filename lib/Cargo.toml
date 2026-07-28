@@ -6,7 +6,7 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
-description = "Render a wallpaper image onto a Wayland output using zwlr_layer_shell_v1. No swaybg, no swww, pure Rust Wayland plumbing with a single blocking function call."
+description = "Render a wallpaper image onto a Wayland output using zwlr_layer_shell_v1. No swaybg or swww required, pure Rust Wayland plumbing."
 keywords = ["wayland", "wallpaper", "layer-shell", "wlroots", "compositor"]
 
 [lib]

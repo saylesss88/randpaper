@@ -3,7 +3,7 @@ mod backends;
 mod cli;
 mod daemon;
 mod daemon_lock;
-#[cfg(feature = "theming")]
+#[cfg(any(feature = "waybar", feature = "terminals"))]
 mod theme;
 mod traits;
 mod wallpaper;

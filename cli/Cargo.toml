@@ -11,11 +11,10 @@ keywords.workspace = true
 readme.workspace = true
 
 [features]
-default = ["theming", "waybar", "terminals", "native-renderer"]
+default = ["waybar", "terminals", "native-renderer"]
 native-renderer = ["randpaper_lib/native-renderer"]
-theming = ["dep:color-thief", "dep:image"]
-waybar = ["theming"]
-terminals = ["theming"]
+waybar = ["dep:color-thief", "dep:image"]
+terminals = ["dep:color-thief", "dep:image"]
 
 [dependencies]
 randpaper_lib.workspace = true
