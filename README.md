@@ -42,26 +42,38 @@ wallpaper.
 
 **Prerequisites**
 
-`swaybg` or (`awww` / `swww`) are no longer required, if you want a simple static
-renderer that's built in, try `native`.
+`swaybg` or (`awww` / `swww`) are no longer required, if you want a simple static renderer written in Rust, try `native`.
 
 If you want slick animations and more, choose `awww`.
 
+**Optional features**
+
+| Feature| Dependencies | Functionality|
+|:--------|:--------------|:-------------|
+| `waybar`| `color-thief`, `image`| Generate `waybar.css` from current image|
+| `terminals`| `color-thief`, `image`| Generate terminal theme from current image|
+| `native-renderer`| `smithay-client-toolkit`, `wayland-client`
+  `rustix`, `image`| A static renderer written in Rust |
+
+
 ```bash
-# From source
+# Just waybar colors, no terminal theming
+cargo install --path cli --no-default-features --features "waybar,native-renderer"
+
+# Just terminal theming, no waybar
+cargo install --path cli --no-default-features --features "terminals,native-renderer"
+```
+
+```bash
+# From source (all features)
 cargo install --git https://github.com/saylesss88/randpaper
-# crates.io
+# crates.io (all features)
 cargo install randpaper
 ```
 
 After `randpaper` and `awww` are installed, you can ensure that it automatically
 detects your monitors and see which transition you like with commands like:
 
-If you're on atomic fedora, it is required to install `libxkbcommon-devel`.
-
-```bash
-rpm-ostree install libxkbcommon-devel
-```
 
 ```bash
 # Use fade transitions
@@ -81,6 +93,11 @@ throw the options in a `config.toml` and simplify the `exec` greatly.
 > starts exit cleanly if an instance is already running. (Same with from the
 > CLI)
 
+If you're on atomic fedora, it is required to install `libxkbcommon-devel`.
+
+```bash
+rpm-ostree install libxkbcommon-devel
+```
 ---
 
 ## Native Renderer
