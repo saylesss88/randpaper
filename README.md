@@ -52,8 +52,7 @@ If you want slick animations and more, choose `awww`.
 |:--------|:--------------|:-------------|
 | `waybar`| `color-thief`, `image`| Generate `waybar.css` from current image|
 | `terminals`| `color-thief`, `image`| Generate terminal theme from current image|
-| `native-renderer`| `smithay-client-toolkit`, `wayland-client`
-  `rustix`, `image`| A static renderer written in Rust |
+| `native-renderer`| `smithay-client-toolkit`,`wayland-client`,`rustix`,`image`| A static renderer written in Rust |
 
 
 ```bash
